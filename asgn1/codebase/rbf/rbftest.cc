@@ -91,6 +91,8 @@ int RBFTest_1(PagedFileManager *pfm)
 
     // Create a file named "test"
     rc = pfm->createFile(fileName.c_str());
+    cout << "exit code: " << rc << endl;
+    cout << "success: " << success << endl;
     assert(rc == success);
 
     if (FileExists(fileName.c_str()))
