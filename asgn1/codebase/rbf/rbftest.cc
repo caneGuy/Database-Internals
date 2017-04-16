@@ -263,6 +263,7 @@ int RBFTest_5(PagedFileManager *pfm)
         *((char *)data + i) = i % 94 + 32;
     }
     rc = memcmp(data, buffer, PAGE_SIZE);
+    cout << "RC: " << rc << endl;
     assert(rc == success);
 
     // Close the file "test_1"

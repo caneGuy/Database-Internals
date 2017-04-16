@@ -9,6 +9,7 @@ typedef char byte;
 #include <string>
 #include <climits>
 #include <sys/stat.h>
+#include <string.h>
 using namespace std;
 
 class FileHandle;
@@ -39,7 +40,9 @@ public:
     unsigned readPageCounter;
     unsigned writePageCounter;
     unsigned appendPageCounter;
+    unsigned long fileSize;
     FILE* openedFile;   
+
  
     FileHandle();                                                         // Default constructor
     ~FileHandle();                                                        // Destructor
