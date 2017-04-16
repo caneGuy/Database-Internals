@@ -19,19 +19,23 @@ RecordBasedFileManager::~RecordBasedFileManager()
 }
 
 RC RecordBasedFileManager::createFile(const string &fileName) {
-    return -1;
+    PagedFileManager* pfm  = PagedFileManager::instance();
+    return pfm->createFile(fileName);
 }
 
 RC RecordBasedFileManager::destroyFile(const string &fileName) {
-    return -1;
+    PagedFileManager* pfm  = PagedFileManager::instance();
+    return pfm->destroyFile(fileName);
 }
 
 RC RecordBasedFileManager::openFile(const string &fileName, FileHandle &fileHandle) {
-    return -1;
+    PagedFileManager* pfm  = PagedFileManager::instance();
+    return pfm->openFile(fileName, fileHandle);;
 }
 
 RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
-    return -1;
+    PagedFileManager* pfm  = PagedFileManager::instance();
+    return pfm->closeFile(fileHandle);
 }
 
 RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {

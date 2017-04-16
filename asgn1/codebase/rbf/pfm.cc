@@ -53,11 +53,11 @@ RC PagedFileManager::openFile(const string &fileName, FileHandle &fileHandle)
     struct stat fileInfo;
     if(stat(fileName.c_str(), &fileInfo) != 0) return -1;
     
-    fileHandle.openedFile = fopen(fileName.c_str(), "a+");
+    fileHandle.openedFile = fopen(fileName.c_str(), "rb+");
     if(fileHandle.openedFile == NULL) return -1;
     
     fileHandle.fileSize = fileInfo.st_size;
-    
+ 
     return 0;
 }
 
@@ -90,13 +90,13 @@ FileHandle::~FileHandle()
 RC FileHandle::readPage(PageNum pageNum, void *data)
 {
     unsigned long totalPages = fileSize/PAGE_SIZE;
-    if(pageNum >= totalPages) return 2;
+    if(pageNum >= totalPages) return -1;
 
-    if(fseek(openedFile, pageNum * PAGE_SIZE, SEEK_SET) != 0) return 3;
-    char buffer[PAGE_SIZE];
+    if(fseek(openedFile, pageNum * PAGE_SIZE, SEEK_SET) != 0) return -1;
+    char buffer[PAGE_SIZE + 1];
 
-    if(fgets(buffer, PAGE_SIZE, openedFile) == NULL) return 4;
-    if(memcpy((char*) data, buffer, PAGE_SIZE) != data) return 6;
+    if(fgets(buffer, sizeof(buffer), openedFile) == NULL) return -1;
+    if(memcpy(data, buffer, PAGE_SIZE) != data) return -1;
 
     return 0;
 }
@@ -104,14 +104,20 @@ RC FileHandle::readPage(PageNum pageNum, void *data)
 
 RC FileHandle::writePage(PageNum pageNum, const void *data)
 {
-    return -1;
+    unsigned long totalPages = fileSize/PAGE_SIZE;
+    if(pageNum >= totalPages) return -1;
+    
+    if(fseek(openedFile, PAGE_SIZE * pageNum, SEEK_SET) != 0) return -1;
+    if(fwrite(data, sizeof(char), PAGE_SIZE, openedFile) != PAGE_SIZE) return -1;
+    
+    return 0;
 }
 
 
 RC FileHandle::appendPage(const void *data)
 {
     if(fseek(openedFile, 0, SEEK_END) != 0)  return -1;
-    if(fwrite(data, sizeof(char), PAGE_SIZE/sizeof(char), openedFile) != PAGE_SIZE/sizeof(char)) return -1;
+    if(fwrite(data, sizeof(char), PAGE_SIZE, openedFile) != PAGE_SIZE) return -1;
     
     fileSize += PAGE_SIZE;
 
