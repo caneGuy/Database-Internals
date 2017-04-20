@@ -1,4 +1,5 @@
 #include "rbfm.h"
+#include "cmath"
 
 RecordBasedFileManager* RecordBasedFileManager::_rbf_manager = 0;
 
@@ -46,29 +47,47 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
     uint16_t recordCount = 0;
     uint16_t pageCount = fileHandle.getNumberOfPages();
     
-    if(pageCount == 0  /*or all pages full*/) {
+    if (pageCount == 0  /*or all pages full*/) {
         page = malloc(PAGE_SIZE);
-    }
-    else {
+    } else {
         pageNumber = pageCount-1;
-        if(fileHandle.readPage(pageNumber, page) != 0) return -1;
+        if (fileHandle.readPage(pageNumber, page) != 0) return -1;
         recordCount = *((char *)page + PAGE_SIZE - 4);
         freeSpace = *((char *)page + PAGE_SIZE - 2);
     }
     
+    char nullvec = ceil(recordDescriptor.size()/8.0);
+    uint16_t dir = recordDescriptor.size();
+    uint16_t len = 0;
+    void *pointer = malloc(sizeof(uint16_t) * dir);
     
-    cout << freeSpace << "   " << "\n";
+    for (int i=0; i<dir; ++i) {
+        char target = *((char *)data + (char)floor(i/8));
+        if(target | ~(1<<(7-i%8))) {
+            len += recordDescriptor[i].length;
+        }
+        *((char *)pointer + i * sizeof(uint16_t)    ) = len >> 8;
+        *((char *)pointer + i * sizeof(uint16_t) + 1) = len;
+    }
+    void* record = malloc(sizeof(uint16_t) + nullvec + sizeof(uint16_t) * dir + len);
+    *((char *)record)       = dir >> 8;
+    *((char *)record + 1)   = dir;
+    memcpy(record + sizeof(uint16_t), data, nullvec + 1);    
+    memcpy(record + sizeof(uint16_t) + nullvec, pointer, sizeof(uint16_t) * dir + 1);
+    memcpy(record + sizeof(uint16_t) + nullvec + sizeof(uint16_t) * dir, data + nullvec, len + 1);
     
-    int test = 300;
-
+    uint16_t recordSize = sizeof(uint16_t) + nullvec + sizeof(uint16_t) * dir + len;
+    
+    cout << (int)nullvec << "   " << dir << "    " << len << endl;
+    
     recordCount++;
     *((char *)page + PAGE_SIZE - 4 - (4*recordCount)    ) = freeSpace >> 8;  
     *((char *)page + PAGE_SIZE - 4 - (4*recordCount) + 1) = freeSpace;  
-    *((char *)page + PAGE_SIZE - 4 - (4*recordCount) + 2) = test >> 8;    
-    *((char *)page + PAGE_SIZE - 4 - (4*recordCount) + 3) = test;    
+    *((char *)page + PAGE_SIZE - 4 - (4*recordCount) + 2) = recordSize >> 8;    
+    *((char *)page + PAGE_SIZE - 4 - (4*recordCount) + 3) = recordSize;    
     
-    memcpy(page + freeSpace, data, 301);
-    freeSpace += 300;         
+    memcpy(page + freeSpace, record, recordSize +1);
+    freeSpace += recordSize;         
 
     *((char *)page + PAGE_SIZE - 4) = recordCount >> 8;
     *((char *)page + PAGE_SIZE - 3) = recordCount;
@@ -76,15 +95,14 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
     *((char *)page + PAGE_SIZE - 1) = freeSpace;
 
     int append_rc;
-    if(pageNumber == -1) {
+    if (pageNumber == -1) {
         append_rc = fileHandle.appendPage(page);
         pageNumber = 0;
-    }
-    else {
+    } else {
         append_rc = fileHandle.writePage(pageNumber, page);
     }
     
-    if(append_rc != 0) return -1;
+    if (append_rc != 0) return -1;
     
     rid.slotNum = recordCount;
     rid.pageNum = pageNumber;
@@ -95,23 +113,30 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
         
-      
-    cout << rid.slotNum << "   " << rid.pageNum << "\n";
     uint16_t offset;
     uint16_t length;
+    uint16_t attCount;
+    uint16_t base;
     
     void *page = malloc(PAGE_SIZE);     
     fileHandle.readPage(rid.pageNum, page);
+    
     offset  = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum))     << 8;
     offset += *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 1);
     length  = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 2) << 8; 
     length += *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 3); 
+    attCount  = *((char *)page + offset    ) << 8; 
+    attCount += *((char *)page + offset + 1); 
     
+    char nullBytes = (char)ceil(attCount/8.0);
+    base = offset + sizeof(uint16_t) + nullBytes + sizeof(uint16_t) * attCount;
     
-    cout << offset << "   " << length << "\n";
+    int test = offset + sizeof(uint16_t) + (char)ceil(attCount/8.0) + sizeof(uint16_t) * attCount;
+    cout << offset << "    " << length << "   " << test << endl;
     
-    memcpy(data, page + offset, length + 1);
-       
+    memcpy(data, page + offset + sizeof(uint16_t), nullBytes + 1);
+    memcpy(data + nullBytes, page + base,  length - base + 1);
+    
     return 0;
     
 }
