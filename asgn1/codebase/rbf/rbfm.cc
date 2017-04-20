@@ -39,18 +39,56 @@ RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
 }
 
 RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {
-    if(fileHandle->getNumberOfPages() == 0) {
-         void *data = malloc(PAGE_SIZE);
-         *((char *)data + PAGE_SIZE - 4) = (uint16_t) 1;
-         *((char *)data + PAGE_SIZE - 2) = (uint16_t) 0;
     
-         int append_rc = pfm->appendPage(data);
-         if(append_rc != 0) return -1;
+    void *page = NULL; 
+    int pageNumber = -1;
+    uint16_t freeSpace = 0;
+    uint16_t recordCount = 0;
+    uint16_t pageCount = fileHandle.getNumberOfPages();
+    
+    if(pageCount == 0  /*or all pages full*/) {
+        page = malloc(PAGE_SIZE);
     }
+    else {
+        pageNumber = pageCount-1;
+        if(fileHandle.readPage(pageNumber, page) != 0) return -1;
+    }
+      
+    recordCount = *((char *)page + PAGE_SIZE - 4) + 1;
+    freeSpace = *((char *)page + PAGE_SIZE - 2);
+
+    *((char *)page + PAGE_SIZE - 4 - (4*recordCount)) = freeSpace;  
+    *((char *)page + PAGE_SIZE - 4 - (4*recordCount) + 2) = sizeof(8);    
+
+    memcpy(page + freeSpace, data, sizeof(8));
+    freeSpace += sizeof(8);         
+
+    *((char *)page + PAGE_SIZE - 4) = recordCount;
+    *((char *)page + PAGE_SIZE - 2) = freeSpace;
+
+    int append_rc;
+    if(pageNumber == -1)
+        append_rc = fileHandle.appendPage(page);
+    else 
+        append_rc = fileHandle.writePage(pageNumber, page);
+    
+    
+    if(append_rc != 0) return -1;
+       
+    return 0;
+    
 }
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
-    return -1;
+        
+    void *page = NULL;     
+    fileHandle.readPage(rid.pageNum, page);
+    uint16_t offset = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum)); 
+    uint16_t length = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 2); 
+    memcpy(data, page + offset, length);
+       
+    return 0;
+    
 }
 
 RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor, const void *data) {

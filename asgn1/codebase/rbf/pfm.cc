@@ -98,7 +98,7 @@ RC FileHandle::readPage(PageNum pageNum, void *data)
     if(fgets(buffer, sizeof(buffer), openedFile) == NULL) return -1;
     if(memcpy(data, buffer, PAGE_SIZE) != data) return -1;
 
-    readPageCount += 1;
+    writePageCounter += 1;
 
     return 0;
 }
@@ -113,7 +113,7 @@ RC FileHandle::writePage(PageNum pageNum, const void *data)
     if(fwrite(data, sizeof(char), PAGE_SIZE, openedFile) != PAGE_SIZE) return -1;
     if(fflush(openedFile) != 0) return -1;    
 
-    writePageCount += 1;
+    writePageCounter += 1;
 
     return 0;
 }
@@ -126,7 +126,7 @@ RC FileHandle::appendPage(const void *data)
     if(fflush(openedFile) != 0) return -1;    
     
     fileSize += PAGE_SIZE;
-    appendPageCount += 1;
+    appendPageCounter += 1;
     
     return 0;
 }
