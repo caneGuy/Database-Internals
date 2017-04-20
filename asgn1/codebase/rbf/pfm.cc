@@ -99,6 +99,12 @@ RC FileHandle::readPage(PageNum pageNum, void *data)
     if(memcpy(data, buffer, PAGE_SIZE) != data) return -1;
 
     writePageCounter += 1;
+    
+    const char * p = reinterpret_cast< const char *>( data );
+    for ( unsigned int i = 0; i < PAGE_SIZE; i++ ) {
+     std::cout << hex << int(p[i]) << " ";
+    }
+    std::cout << std::endl;
 
     return 0;
 }

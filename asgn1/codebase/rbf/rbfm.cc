@@ -52,28 +52,42 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
     else {
         pageNumber = pageCount-1;
         if(fileHandle.readPage(pageNumber, page) != 0) return -1;
+        recordCount = *((char *)page + PAGE_SIZE - 4);
+        freeSpace = *((char *)page + PAGE_SIZE - 2);
     }
-      
-    recordCount = *((char *)page + PAGE_SIZE - 4) + 1;
-    freeSpace = *((char *)page + PAGE_SIZE - 2);
+    
+    
+    cout << freeSpace << "   " << "\n";
+    
+    int test = 300;
 
-    *((char *)page + PAGE_SIZE - 4 - (4*recordCount)) = freeSpace;  
-    *((char *)page + PAGE_SIZE - 4 - (4*recordCount) + 2) = sizeof(8);    
+    recordCount++;
+    *((char *)page + PAGE_SIZE - 4 - (4*recordCount)    ) = freeSpace >> 8;  
+    *((char *)page + PAGE_SIZE - 4 - (4*recordCount) + 1) = freeSpace;  
+    *((char *)page + PAGE_SIZE - 4 - (4*recordCount) + 2) = test >> 8;    
+    *((char *)page + PAGE_SIZE - 4 - (4*recordCount) + 3) = test;    
+    
+    memcpy(page + freeSpace, data, 301);
+    freeSpace += 300;         
 
-    memcpy(page + freeSpace, data, sizeof(8));
-    freeSpace += sizeof(8);         
-
-    *((char *)page + PAGE_SIZE - 4) = recordCount;
-    *((char *)page + PAGE_SIZE - 2) = freeSpace;
+    *((char *)page + PAGE_SIZE - 4) = recordCount >> 8;
+    *((char *)page + PAGE_SIZE - 3) = recordCount;
+    *((char *)page + PAGE_SIZE - 2) = freeSpace >> 8;
+    *((char *)page + PAGE_SIZE - 1) = freeSpace;
 
     int append_rc;
-    if(pageNumber == -1)
+    if(pageNumber == -1) {
         append_rc = fileHandle.appendPage(page);
-    else 
+        pageNumber = 0;
+    }
+    else {
         append_rc = fileHandle.writePage(pageNumber, page);
-    
+    }
     
     if(append_rc != 0) return -1;
+    
+    rid.slotNum = recordCount;
+    rid.pageNum = pageNumber;
        
     return 0;
     
@@ -81,11 +95,22 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
         
-    void *page = NULL;     
+      
+    cout << rid.slotNum << "   " << rid.pageNum << "\n";
+    uint16_t offset;
+    uint16_t length;
+    
+    void *page = malloc(PAGE_SIZE);     
     fileHandle.readPage(rid.pageNum, page);
-    uint16_t offset = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum)); 
-    uint16_t length = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 2); 
-    memcpy(data, page + offset, length);
+    offset  = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum))     << 8;
+    offset += *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 1);
+    length  = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 2) << 8; 
+    length += *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 3); 
+    
+    
+    cout << offset << "   " << length << "\n";
+    
+    memcpy(data, page + offset, length + 1);
        
     return 0;
     
