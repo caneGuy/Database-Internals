@@ -100,11 +100,11 @@ RC FileHandle::readPage(PageNum pageNum, void *data)
 
     writePageCounter += 1;
     
-    /*const char * p = reinterpret_cast< const char *>( data );
+    const char * p = reinterpret_cast< const char *>( data );
     for ( unsigned int i = 0; i < PAGE_SIZE; i++ ) {
      std::cout << hex << int(p[i]) << " ";
     }
-    std::cout << std::endl;*/
+    std::cout << std::endl;
 
     return 0;
 }

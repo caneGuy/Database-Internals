@@ -559,6 +559,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
 
     RID rid; 
     void *record = malloc(1000);
+    void *returnedData = malloc(1000);
     int numRecords = 2000;
 
     vector<Attribute> recordDescriptor;
@@ -585,6 +586,13 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
 
         rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
         assert(rc == success && "Inserting a record should not fail.");
+        
+        rc = rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
+        assert(rc == success && "Inserting a record should not fail.");
+
+
+        
+        cout << "test" << endl;
 
         rids.push_back(rid);
         sizes.push_back(size);        
