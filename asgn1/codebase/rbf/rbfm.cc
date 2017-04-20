@@ -30,7 +30,7 @@ RC RecordBasedFileManager::destroyFile(const string &fileName) {
 
 RC RecordBasedFileManager::openFile(const string &fileName, FileHandle &fileHandle) {
     PagedFileManager* pfm  = PagedFileManager::instance();
-    return pfm->openFile(fileName, fileHandle);;
+    return pfm->openFile(fileName, fileHandle);
 }
 
 RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
@@ -39,7 +39,14 @@ RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
 }
 
 RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {
-    return -1;
+    if(fileHandle->getNumberOfPages() == 0) {
+         void *data = malloc(PAGE_SIZE);
+         *((char *)data + PAGE_SIZE - 4) = (uint16_t) 1;
+         *((char *)data + PAGE_SIZE - 2) = (uint16_t) 0;
+    
+         int append_rc = pfm->appendPage(data);
+         if(append_rc != 0) return -1;
+    }
 }
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
