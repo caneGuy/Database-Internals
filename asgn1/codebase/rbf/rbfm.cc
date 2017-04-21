@@ -232,7 +232,36 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
     
     char *data_c = (char*)data;
     for(unsigned int i = 0; i < fieldCount; ++i) {
-           
+        if (!(target & (1<<(7-i%8)))) {
+            
+            if (recordDescriptor[i].type == TypeVarChar) {
+                int attlen;
+                memcpy(&attlen, &data_c[offset], sizeof(int));
+                char content[attlen + 1];
+                memcpy(content, &data_c[offset + 4], attlen + 1);
+                content[attlen] = 0;
+                cout << recordDescriptor[i].name << ": " << content << "\t";
+                offset += (4 + attlen);                
+            } else {
+                if (recordDescriptor[i].type == TypeInt) {
+                    int num;
+                    memcpy(&num, &data_c[offset], sizeof(int));
+                    cout << recordDescriptor[i].name << ": " << num << "\t";
+                    offset += sizeof(int); 
+                } 
+                if (recordDescriptor[i].type == TypeReal) {
+                    float num;
+                    memcpy(&num, &data_c[offset], sizeof(float));
+                    cout << recordDescriptor[i].name << ": " << num << "\t";
+                    offset += sizeof(float); 
+                }
+            }
+            
+        } else {
+            
+            cout << recordDescriptor[i].name << ": NULL\t";
+            
+        }
     }
     // offset  = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum))     << 8;
     // cout << "Offset: " << offset << endl;
