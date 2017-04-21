@@ -5,7 +5,7 @@ typedef unsigned PageNum;
 typedef int RC;
 typedef char byte;
 
-#define PAGE_SIZE 4096
+#define PAGE_SIZE (4096)
 #include <string>
 #include <climits>
 #include <sys/stat.h>
