@@ -67,6 +67,7 @@ RC PagedFileManager::closeFile(FileHandle &fileHandle)
     if(fileHandle.openedFile == NULL) return -1;
     
     fclose(fileHandle.openedFile);
+    fileHandle.openedFile = NULL;
     
     return 0;
 }
@@ -84,6 +85,10 @@ FileHandle::FileHandle()
 
 FileHandle::~FileHandle()
 {
+    if(openedFile != NULL) {
+        fflush(openedFile);
+        fclose(openedFile);
+    }
 }
 
 

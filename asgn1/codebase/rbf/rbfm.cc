@@ -17,6 +17,7 @@ RecordBasedFileManager::RecordBasedFileManager()
 
 RecordBasedFileManager::~RecordBasedFileManager()
 {
+    free(_rbf_manager);
 }
 
 RC RecordBasedFileManager::createFile(const string &fileName) {
@@ -51,7 +52,7 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
     for (int i = 0; i < count; ++i) 
         max_size += recordDescriptor[i].length;
     
-    char *record = (char*)malloc(max_size);
+    char *record = (char*)calloc(max_size, sizeof(char));
     memcpy(record, &count, sizeof(uint16_t));
     memcpy(record + sizeof(uint16_t), &data_c[0], in_offset);
     
@@ -117,7 +118,7 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
     // uint16_t recordSize = sizeof(uint16_t) + nullvec + sizeof(uint16_t) * dir + len;    
     
      
-    char *page = (char*)malloc(PAGE_SIZE); 
+    char *page = (char*)calloc(PAGE_SIZE, sizeof(char)); 
     uint16_t pageCount = fileHandle.getNumberOfPages(); 
     uint16_t currPage = (pageCount>0) ? pageCount-1 : 0;
     uint16_t freeSpace;
@@ -195,19 +196,19 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
     } else {
         append_rc = fileHandle.writePage(currPage, page);
     }
-    
     if (append_rc != 0) return -1;
     
     rid.slotNum = recordCount;
     rid.pageNum = currPage;
-       
+    free(record);
+    free(page);
     return 0;
     
 }
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
     
-    char *page = (char*) malloc(PAGE_SIZE);     
+    char *page = (char*) calloc(PAGE_SIZE, sizeof(char));     
     int readpage_rc = fileHandle.readPage(rid.pageNum, page);
     if(readpage_rc != 0) return -1;   
 
@@ -270,7 +271,7 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
     
     // memcpy(data, page + offset + sizeof(uint16_t), nullBytes + 1);
     // memcpy(data + nullBytes, page + base,  length - base + 1);
-    
+    free(page);
     return 0;
     
 }
@@ -289,11 +290,16 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
             if (recordDescriptor[i].type == TypeVarChar) {
                 int attlen;
                 memcpy(&attlen, &data_c[offset], sizeof(int));
-                char content[attlen + 1];
-                memcpy(content, &data_c[offset + 4], attlen + 1);
-                content[attlen] = 0;
-                cout << recordDescriptor[i].name << ": " << content << "\t";
-                offset += (4 + attlen);                
+                //cout << "atlen: " << attlen << endl;
+                char content[attlen + 1000000];
+                memcpy(content, &data_c[offset + sizeof(int)], attlen );
+                //content[attlen] = 0;
+                /*for(int pos = 0; pos < attlen; ++pos) {
+                    cout << &data_c[offset + sizeof(int) + pos];
+                }*/
+                //cout << recordDescriptor[i].name << ": " << content << "\t";
+                offset += (4 + attlen);
+                //cout << &content << " " << &data_c << " " << offset << endl;
             } else {
                 if (recordDescriptor[i].type == TypeInt) {
                     int num;
@@ -318,6 +324,5 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
     }
     
     cout << endl; 
-    
     return 0;
 }

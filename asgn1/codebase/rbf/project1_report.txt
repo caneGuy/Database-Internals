@@ -1,0 +1,40 @@
+1. Basic information
+Team Number : 11
+Student ID# of Submitter: 1375886
+Name of Submitter: Travis Takai
+ID#s and Names for others on the Team:
+-Brad Bernard
+-Johannes Pitz
+
+2. Internal Record Format
+- Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that you haven't implemented this feature.
+	
+	-Our records use the following structure:
+		| Field Count | Null Bit-Vector | Directory of offsets to end of field value | Values for Corresponding Fields |
+	-We based the structure off of the Variable Length record-format on slide 11 of lecture 3.
+	-All of our directory offsets use a uint16_t since it is large enough to represent any feasible offset as well as halving the space used by an int.
+	-It provides O(1) accessibility because we know how many fields are present and/or null and we can calculate the offset directly to a field.
+
+- Describe how you store a VarChar field.
+
+	-The offset of each field is variable length so we can avoid storing empty space if the VarChar is less than the max character limit.
+	-We use the field offsets to calculate how long a given VarChar field is and only retrieve the exact length of it.
+	-We read the first byte to determine length of the VarChar data for the current input record.
+
+3. Page Format
+- Show your page format design
+	
+	-Our page format is such that:
+		-Each pages' last 2 bytes represents the free space offset.
+		-The second to last 2 bytes on a page represents the number of records in a page.
+		-The following 4 byte groups are ordered by slot number ascending and each group is a tuple of (length of record (2 bytes), offset of record within page (2 bytes)).
+
+4. Implementation Detail
+- Other implementation details goes here.
+
+	-In order to determine where/if there is free space to insert a record, we start from the the last page (current page).
+	-If there is no free space in that page, we cycle through the pages in the file starting from the first one looking for free space.
+	-If there is no free space in any of the pages we append a new page to the file with the given data. 
+
+5. Other (optional)
+- Freely use this section to tell us about things that are related to the project 1, but not related to the other sections (optional)

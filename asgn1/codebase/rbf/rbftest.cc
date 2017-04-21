@@ -480,8 +480,8 @@ int RBFTest_8(RecordBasedFileManager *rbfm)
       
     RID rid; 
     int recordSize = 0;
-    void *record = malloc(100);
-    void *returnedData = malloc(100);
+    void *record = calloc(100, sizeof(char));
+    void *returnedData = calloc(100, sizeof(char));
 
     vector<Attribute> recordDescriptor;
     createRecordDescriptor(recordDescriptor);
@@ -532,7 +532,6 @@ int RBFTest_8(RecordBasedFileManager *rbfm)
     
     free(record);
     free(returnedData);
-
     cout << "RBF Test Case 8 Finished! The result will be examined." << endl << endl;
     
     return 0;
@@ -800,8 +799,8 @@ int main()
 
     vector<RID> rids;
     vector<int> sizes;
-    RBFTest_9(rbfm, rids, sizes);
-    RBFTest_10(rbfm);
+    //RBFTest_9(rbfm, rids, sizes);
+    //RBFTest_10(rbfm);
     
     return 0;
 }

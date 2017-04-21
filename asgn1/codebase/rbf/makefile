@@ -24,3 +24,6 @@ $(CODEROOT)/rbf/librbf.a:
 .PHONY: clean
 clean:
 	-rm rbftest rbftest11a rbftest11b *.a *.o *~
+
+grind:
+	valgrind --leak-check=full --run-libc-freeres=no --leak-check=yes --show-leak-kinds=all --track-origins=yes -v --show-reachable=yes ./rbftest
