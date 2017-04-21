@@ -91,12 +91,19 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
         }
         
     } 
+    
+     // cout << "record:" << endl;   
+    // const char * p = reinterpret_cast< const char *>( record );
+    // for ( unsigned int i = 0; i < data_offset; i++ ) {
+     // std::cout << hex << int(p[i]) << " ";
+    // }
+     // cout << "record end:" << endl; 
      
     char *page = (char*)malloc(PAGE_SIZE); 
     uint16_t pageCount = fileHandle.getNumberOfPages(); 
     uint16_t currPage = (pageCount>0) ? pageCount-1 : 0;
     uint16_t freeSpace;
-    uint16_t recordCount;
+    uint16_t recordCount;  
     
     char first = 1;
     while (currPage < pageCount) {        
@@ -105,8 +112,8 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
         memcpy(&recordCount, &page[PAGE_SIZE - 4], sizeof(uint16_t));
         memcpy(&freeSpace, &page[PAGE_SIZE - 2], sizeof(uint16_t));  
         
-        cout << currPage << "   " << freeSpace << endl;
-        cout << data_offset << "   " << recordCount << endl;
+        // cout << currPage << "   " << freeSpace << endl;
+        // cout << data_offset << "   " << recordCount << endl;
 
         if (data_offset + 4 <= PAGE_SIZE - (freeSpace + 4 * recordCount + 4)) {
             break;
@@ -123,15 +130,15 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
     // not enough space on any pages
     // later we append instead of overwrite in this case
     if (currPage == pageCount) {
+        memset(page, 0, PAGE_SIZE); // debug only
         freeSpace = 0;
         recordCount = 0;
-        cout << "telasdfjasldfjlst" << endl;
     }
      
     recordCount++;
     
     // write acutal record
-    memcpy(page + freeSpace, record, data_offset);
+    memcpy(page + freeSpace, record, data_offset);    
     
     // write entry in page directory
     int page_dir = PAGE_SIZE - (4 * recordCount + 4);
@@ -142,6 +149,13 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
         
     memcpy(page + PAGE_SIZE - 4, &recordCount, sizeof(uint16_t));
     memcpy(page + PAGE_SIZE - 2, &freeSpace, sizeof(uint16_t));   
+    
+    // cout << "page after adding record" << endl; 
+    // p = reinterpret_cast< const char *>( page );
+    // for ( unsigned int i = 0; i < PAGE_SIZE; i++ ) {
+     // std::cout << hex << int(p[i]) << " ";
+    // }
+     // cout << endl << "page end:" << endl; 
 
     int append_rc;
     if (currPage == pageCount) {
@@ -149,12 +163,15 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
         cout << "new page ceated  " << currPage << "   " << append_rc << endl;
     } else {
         append_rc = fileHandle.writePage(currPage, page);
+        append_rc = fileHandle.readPage(currPage, page);
     }
     
     if (append_rc != 0) return -1;
     
     rid.slotNum = recordCount;
     rid.pageNum = currPage;
+    
+    // cout << rid.pageNum << "   " << rid.slotNum << endl;
        
     return 0;
     
@@ -163,17 +180,26 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
     
     char *page = (char*) malloc(PAGE_SIZE);     
+    
     int readpage_rc = fileHandle.readPage(rid.pageNum, page);
     if(readpage_rc != 0) return -1;   
 
     uint16_t count;
     memcpy(&count, &page[PAGE_SIZE - 4], sizeof(uint16_t));
-    
-    cout << rid.slotNum << "   " << count << endl;
     if(rid.slotNum > count) return -1;
     
     uint16_t record;
     memcpy(&record,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum)], sizeof(uint16_t));
+     
+    
+    // cout << rid.slotNum << "   " << count << endl;
+    // cout << "page in readrecord" << endl; 
+    // const char* p = reinterpret_cast< const char *>( page );
+    // for ( unsigned int i = 0; i < PAGE_SIZE; i++ ) {
+     // std::cout << hex << int(p[i]) << " ";
+    // }
+     // cout << endl << "page end:" << endl; 
+    // cout << "recored start address  " << record << endl;
      
     uint16_t fieldCount;
     memcpy(&fieldCount, &page[record], sizeof(uint16_t));
@@ -204,24 +230,6 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
         }
         prev_offset = offset;
     }
-    // offset  = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum))     << 8;
-    // cout << "Offset: " << offset << endl;
-    // offset += *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 1);
-    // cout << "Offset: " << (int)offset << endl;
-    // length  = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 2) << 8; 
-    // length += *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 3); 
-    // attCount  = *((char *)page + offset    ) << 8; 
-    // attCount += *((char *)page + offset + 1); 
-    
-    // char nullBytes = (char)ceil(attCount/8.0);
-    // base = offset + sizeof(uint16_t) + nullBytes + sizeof(uint16_t) * attCount;
-    
-    // int test = offset + sizeof(uint16_t) + (char)ceil(attCount/8.0) + sizeof(uint16_t) * attCount;
-    // cout << "pageNum: " << rid.pageNum <<  "  slotNum: " << rid.slotNum << endl;
-    // cout << "offset: " << offset << " length: " << length << " attCount: " << attCount << endl;
-    
-    // memcpy(data, page + offset + sizeof(uint16_t), nullBytes + 1);
-    // memcpy(data + nullBytes, page + base,  length - base + 1);
     
     return 0;
     

@@ -600,13 +600,18 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
     memset(nullsIndicator, 0, nullFieldsIndicatorActualSize);
 
     // Insert 2000 records into file
-    for(int i = 0; i < numRecords; i++)
+    for(int i = 0; i < 2000; i++)
     {
         // Test insert Record
         int size = 0;
         memset(record, 0, 1000);
         prepareLargeRecord(recordDescriptor.size(), nullsIndicator, i, record, &size);
         
+    // const char * p = reinterpret_cast< const char *>( record );
+    // for ( unsigned int q = 0; q < size; q++ ) {
+     // std::cout << hex << int(p[q]) << " ";
+    // }
+    // std::cout << std::endl;
         
     // rbfm->printRecord(recordDescriptor, record);
 
@@ -615,10 +620,6 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
         
         rc = rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
         assert(rc == success && "Inserting a record should not fail.");
-
-
-        
-        cout << "test" << endl;
 
         rids.push_back(rid);
         sizes.push_back(size);        
