@@ -206,11 +206,6 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 }
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
-        
-    // uint16_t offset;
-    // uint16_t length;
-    // uint16_t attCount;
-    // uint16_t base;
     
     char *page = (char*) malloc(PAGE_SIZE);     
     int readpage_rc = fileHandle.readPage(rid.pageNum, page);
@@ -219,35 +214,43 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
     uint16_t count;
     memcpy(&count, &page[PAGE_SIZE - 4], sizeof(uint16_t));
     
-    if(rid.slotNum >= count) return -1;
+    cout << rid.slotNum << "   " << count << endl;
+    if(rid.slotNum > count) return -1;
     
-    uint16_t base;
-    memcpy(&base,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum + 1)], sizeof(uint16_t));
+    uint16_t record;
+    memcpy(&record,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum)], sizeof(uint16_t));
+    
+    cout << record << endl;
      
     uint16_t fieldCount;
-    memcpy(&fieldCount, &page[PAGE_SIZE + base], sizeof(uint16_t));
+    memcpy(&fieldCount, &page[record], sizeof(uint16_t));
+    cout << fieldCount << "    " <<  recordDescriptor.size() << endl;
+    if (fieldCount != recordDescriptor.size()) return -1;
 
-    uint16_t offset = ceil(fieldCount / 8.0);
-    memcpy(data, &page[PAGE_SIZE + base + sizeof(uint16_t)], offset);
+    uint16_t nullvec = ceil(fieldCount / 8.0);
+    memcpy(data, &page[record + sizeof(uint16_t)], nullvec);
     
-    uint16_t dataOffset = offset + fieldCount * sizeof(uint16_t);
-    uint16_t prevDataOffset = dataOffset;
+    uint16_t directory = record + sizeof(uint16_t) + nullvec;
+    
+    uint16_t offset = sizeof(uint16_t) + nullvec + fieldCount * sizeof(uint16_t);
+    uint16_t prev_offset = offset;
     char *data_c = (char*)data;
     
-    for(unsigned int i = 0; i < fieldCount; ++i) {
+    for(uint16_t i = 0; i < fieldCount; ++i) {
         char target = *(data_c + (char)(i/8));
         if (!(target & (1<<(7-i%8)))) {
+            memcpy(&offset, &page[directory + i * sizeof(uint16_t)], sizeof(uint16_t));
             if (recordDescriptor[i].type == TypeVarChar) {
-                memcpy(&dataOffset, &data_c[offset + sizeof(uint16_t)], sizeof(uint16_t));
-                memcpy(&attlen, &data_c[offset], sizeof(int));
-                offset += (4 + attlen);                
+                uint16_t attlen = offset - prev_offset;
+                memcpy(&data_c[0], &attlen, sizeof(uint16_t));
+                memcpy(&data_c[4], &page[record + prev_offset], attlen);
+                data_c += (4 + attlen);                
             } else {
-                float num;
-                memcpy(&num, &data_c[offset], sizeof(float));
-                offset += sizeof(float); 
+                memcpy(&data_c[0], &page[record + prev_offset], sizeof(int));
+                offset += sizeof(int); 
             }
-        }   
-        prevDataOffset = offset;
+        }
+        prev_offset = offset;
     }
     // offset  = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum))     << 8;
     // cout << "Offset: " << offset << endl;
