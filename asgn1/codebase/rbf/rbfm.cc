@@ -212,9 +212,28 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
     // uint16_t attCount;
     // uint16_t base;
     
-    // void *page = malloc(PAGE_SIZE);     
-    // fileHandle.readPage(rid.pageNum, page);
+    char *page = (char*) malloc(PAGE_SIZE);     
+    int readpage_rc = fileHandle.readPage(rid.pageNum, page);
+    if(readpage_rc != 0) return -1;   
+
+    uint16_t count;
+    memcpy(&count, &page[PAGE_SIZE - 4], sizeof(uint16_t));
     
+    if(rid.slotNum >= count) return -1;
+    
+    uint16_t base;
+    memcpy(&base,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum + 1)], sizeof(uint16_t));
+     
+    uint16_t fieldCount;
+    memcpy(&fieldCount, &page[PAGE_SIZE + base], sizeof(uint16_t));
+
+    uint16_t offset = ceil(fieldCount / 8.0);
+    memcpy(data, &page[PAGE_SIZE + base + 2], offset);
+    
+    char *data_c = (char*)data;
+    for(unsigned int i = 0; i < fieldCount; ++i) {
+           
+    }
     // offset  = *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum))     << 8;
     // cout << "Offset: " << offset << endl;
     // offset += *((char *)page + PAGE_SIZE - 4 - (4*rid.slotNum) + 1);
