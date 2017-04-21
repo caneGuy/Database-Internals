@@ -112,7 +112,7 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
     *((char *)page + PAGE_SIZE - 1) = freeSpace;
     
     cout << "freeSpace after 1 : " << (int) *((char *)page + PAGE_SIZE - 2) << endl;
-    cout << "freeSpace after 2: " << (int) *((char *)page + PAGE_SIZE - 1) << endl;
+    cout << "freeSpace after 2: " << *((char *)page + PAGE_SIZE - 1) << endl;
 
     int append_rc;
     if (currPage == pageCount) {
@@ -133,7 +133,7 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
         
-    int16_t offset;
+    uint16_t offset;
     uint16_t length;
     uint16_t attCount;
     uint16_t base;
@@ -165,5 +165,44 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 }
 
 RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor, const void *data) {
-    return -1;
+    
+    uint16_t count = recordDescriptor.size();
+    uint16_t len = ceil(recordDescriptor.size()/8.0);
+    const char* data_c = (char*)data;
+    
+    for (int i = 0; i < count; ++i) {
+        
+        char target = *(data_c + (char)(i/8));
+        if (!(target & (1<<(7-i%8)))) {
+            
+            if (recordDescriptor[i].type == TypeVarChar) {
+                int attlen;
+                memcpy(&attlen, &data_c[len], sizeof(int));
+                char content[attlen + 1];
+                memcpy(content, &data_c[len + 4], attlen + 1);
+                content[attlen] = 0;
+                cout << recordDescriptor[i].name << ": " << content << "\t";
+                len += (4 + attlen);                
+            } else {
+                if (recordDescriptor[i].type == TypeInt) {
+                    int num;
+                    memcpy(&num, &data_c[len], sizeof(int));
+                    cout << recordDescriptor[i].name << ": " << num << "\t";
+                    len += sizeof(int); 
+                } 
+                if (recordDescriptor[i].type == TypeReal) {
+                    float num;
+                    memcpy(&num, &data_c[len], sizeof(float));
+                    cout << recordDescriptor[i].name << ": " << num << "\t";
+                    len += sizeof(float); 
+                }
+            }
+            
+        }
+        
+    }
+    
+    cout << endl; 
+    
+    return 0;
 }
