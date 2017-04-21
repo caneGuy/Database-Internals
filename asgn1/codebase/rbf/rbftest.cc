@@ -500,13 +500,32 @@ int RBFTest_8(RecordBasedFileManager *rbfm)
     
     rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
     assert(rc == success && "Inserting a record should not fail.");
+    rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
+    assert(rc == success && "Inserting a record should not fail.");
+    rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
+    assert(rc == success && "Inserting a record should not fail.");
     
     // Given the rid, read the record from file
     rc = rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
     assert(rc == success && "Reading a record should not fail.");
 
-    cout << endl << "Returned Data:" << endl;
+    cout << endl << "Returned Data:" << endl;    
+        
+    const char * p = reinterpret_cast< const char *>( record );
+    for ( unsigned int i = 0; i < recordSize; i++ ) {
+     std::cout << hex << int(p[i]) << " ";
+    }
+    std::cout << std::endl;
+    
+        
+    p = reinterpret_cast< const char *>( returnedData );
+    for ( unsigned int i = 0; i < recordSize; i++ ) {
+     std::cout << hex << int(p[i]) << " ";
+    }
+    std::cout << std::endl;
+    
     rbfm->printRecord(recordDescriptor, returnedData);
+    cout << endl << "Returned Data:" << endl;
 
     // Compare whether the two memory blocks are the same
     if(memcmp(record, returnedData, recordSize) != 0)
@@ -588,13 +607,13 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
         prepareLargeRecord(recordDescriptor.size(), nullsIndicator, i, record, &size);
         
         
-    rbfm->printRecord(recordDescriptor, record);
+    // rbfm->printRecord(recordDescriptor, record);
 
         rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
         assert(rc == success && "Inserting a record should not fail.");
         
-        // rc = rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
-        // assert(rc == success && "Inserting a record should not fail.");
+        rc = rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
+        assert(rc == success && "Inserting a record should not fail.");
 
 
         
