@@ -1,10 +1,10 @@
 1. Basic information
-Team Number : 11
+Team Number: 11
 Student ID# of Submitter: 1375886
 Name of Submitter: Travis Takai
 ID#s and Names for others on the Team:
--Brad Bernard
--Johannes Pitz
+-Brad Bernard 1426712
+-Johannes Pitz 1442286
 
 2. Internal Record Format
 - Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that you haven't implemented this feature.
@@ -39,4 +39,9 @@ ID#s and Names for others on the Team:
 	-If there is no free space in any of the pages we append a new page to the file with the given data. 
 
 5. Other (optional)
-- Freely use this section to tell us about things that are related to the project 1, but not related to the other sections (optional)
+- Freely use this section to tell us about things that are related to the project 1, but not related to the other sections (optional).
+- Created our own test script to modify the records to make sure our classes actually worked.
+- Also free'd up some of the test scripts memory leaks: we got down to two bytes for each of the pointers from the instance functions and to free those we made a static function that 'delete'd the
+ instance pointers but this had to be called at the end of the test script. We removed it at the end but thats how we did it to get no memory leaks. 
+- We named our custom test script custom_rbftest.cc and copied the original back into our directory.
+- Our read returns an error if the count in the database and in the record descriptor don't match.

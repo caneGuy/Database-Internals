@@ -25,27 +25,29 @@ bool FileExists(string fileName)
         return false;
 }
 
-// Function to prepare the data in the correct form to be inserted/read
-void prepareRecord(const int nameLength, const string &name, const int age, const float height, const int salary, void *buffer, int *recordSize)
-{
-    int offset = 0;
+// // Function to prepare the data in the correct form to be inserted/read
+// void prepareRecord(const int nameLength, const string &name, const int age, const float height, const int salary, void *buffer, int *recordSize)
+// {
+    // int offset = 0;
 
-    memcpy((char *)buffer + offset, &nameLength, sizeof(int));
-    offset += sizeof(int);
-    memcpy((char *)buffer + offset, name.c_str(), nameLength);
-    offset += nameLength;
+    // memcpy((char *)buffer + offset, &nameLength, sizeof(int));
+    // offset += sizeof(int);
+    // memcpy((char *)buffer + offset, name.c_str(), nameLength);
+    // offset += nameLength;
 
-    memcpy((char *)buffer + offset, &age, sizeof(int));
-    offset += sizeof(int);
+    // memcpy((char *)buffer + offset, &age, sizeof(int));
+    // offset += sizeof(int);
 
-    memcpy((char *)buffer + offset, &height, sizeof(float));
-    offset += sizeof(float);
+    // memcpy((char *)buffer + offset, &height, sizeof(float));
+    // offset += sizeof(float);
+    
+    // cout << " size of float" << sizeof(float) << endl;
 
-    memcpy((char *)buffer + offset, &salary, sizeof(int));
-    offset += sizeof(int);
+    // memcpy((char *)buffer + offset, &salary, sizeof(int));
+    // offset += sizeof(int);
 
-    *recordSize = offset;
-}
+    // *recordSize = offset;
+// }
 
 void prepareLargeRecord(const int index, void *buffer, int *size)
 {
@@ -91,6 +93,8 @@ int RBFTest_1(PagedFileManager *pfm)
 
     // Create a file named "test"
     rc = pfm->createFile(fileName.c_str());
+    cout << "exit code: " << rc << endl;
+    cout << "success: " << success << endl;
     assert(rc == success);
 
     if (FileExists(fileName.c_str()))
@@ -476,8 +480,8 @@ int RBFTest_8(RecordBasedFileManager *rbfm)
       
     RID rid; 
     int recordSize = 0;
-    void *record = malloc(100);
-    void *returnedData = malloc(100);
+    void *record = calloc(100, sizeof(char));
+    void *returnedData = calloc(100, sizeof(char));
 
     vector<Attribute> recordDescriptor;
     createRecordDescriptor(recordDescriptor);
@@ -486,12 +490,20 @@ int RBFTest_8(RecordBasedFileManager *rbfm)
     int nullFieldsIndicatorActualSize = getActualByteForNullsIndicator(recordDescriptor.size());
     unsigned char *nullsIndicator = (unsigned char *) malloc(nullFieldsIndicatorActualSize);
     memset(nullsIndicator, 0, nullFieldsIndicatorActualSize);
+    
+    nullsIndicator[0] = (char)64;
+    
+    cout << "test" << endl;
 
     // Insert a record into a file and print the record
-    prepareRecord(recordDescriptor.size(), nullsIndicator, 8, "Anteater", 25, 177.8, 6200, record, &recordSize);
+    prepareRecord(recordDescriptor.size(), nullsIndicator, 8, "Anteater", 26214, 1221.23, 6200, record, &recordSize);
     cout << endl << "Inserting Data:" << endl;
     rbfm->printRecord(recordDescriptor, record);
     
+    rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
+    assert(rc == success && "Inserting a record should not fail.");
+    rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
+    assert(rc == success && "Inserting a record should not fail.");
     rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
     assert(rc == success && "Inserting a record should not fail.");
     
@@ -499,12 +511,28 @@ int RBFTest_8(RecordBasedFileManager *rbfm)
     rc = rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
     assert(rc == success && "Reading a record should not fail.");
 
-    cout << endl << "Returned Data:" << endl;
+    cout << endl << "Returned Data:" << endl;    
+        
+    // const char * p = reinterpret_cast< const char *>( record );
+    // for ( unsigned int i = 0; i < recordSize; i++ ) {
+     // std::cout << hex << int(p[i]) << " ";
+    // }
+    // std::cout << std::endl;
+    
+        
+    // p = reinterpret_cast< const char *>( returnedData );
+    // for ( unsigned int i = 0; i < recordSize; i++ ) {
+     // std::cout << hex << int(p[i]) << " ";
+    // }
+    // std::cout << std::endl;
+    
     rbfm->printRecord(recordDescriptor, returnedData);
+    cout << endl << "Returned Data:" << endl;
 
     // Compare whether the two memory blocks are the same
     if(memcmp(record, returnedData, recordSize) != 0)
     {
+	free(nullsIndicator);
         cout << "[FAIL] Test Case 8 Failed!" << endl << endl;
         free(record);
         free(returnedData);
@@ -523,10 +551,9 @@ int RBFTest_8(RecordBasedFileManager *rbfm)
 
     rc = destroyFileShouldSucceed(fileName);
     assert(rc == success  && "Destroying the file should not fail.");
-    
+    free(nullsIndicator);
     free(record);
     free(returnedData);
-
     cout << "RBF Test Case 8 Finished! The result will be examined." << endl << endl;
     
     return 0;
@@ -557,6 +584,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
 
     RID rid; 
     void *record = malloc(1000);
+    void *returnedData = malloc(1000);
     int numRecords = 2000;
 
     vector<Attribute> recordDescriptor;
@@ -564,7 +592,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
 
     for(unsigned i = 0; i < recordDescriptor.size(); i++)
     {
-        cout << "Attr Name: " << recordDescriptor[i].name << " Attr Type: " << (AttrType)recordDescriptor[i].type << " Attr Len: " << recordDescriptor[i].length << endl;
+        cout << i << "   Attr Name: " << recordDescriptor[i].name << " Attr Type: " << (AttrType)recordDescriptor[i].type << " Attr Len: " << recordDescriptor[i].length << endl;
     }
     cout << endl;
     
@@ -574,14 +602,25 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
     memset(nullsIndicator, 0, nullFieldsIndicatorActualSize);
 
     // Insert 2000 records into file
-    for(int i = 0; i < numRecords; i++)
+    for(int i = 0; i < 2000; i++)
     {
         // Test insert Record
         int size = 0;
         memset(record, 0, 1000);
         prepareLargeRecord(recordDescriptor.size(), nullsIndicator, i, record, &size);
+        
+    // const char * p = reinterpret_cast< const char *>( record );
+    // for ( unsigned int q = 0; q < size; q++ ) {
+     // std::cout << hex << int(p[q]) << " ";
+    // }
+    // std::cout << std::endl;
+        
+    // rbfm->printRecord(recordDescriptor, record);
 
         rc = rbfm->insertRecord(fileHandle, recordDescriptor, record, rid);
+        assert(rc == success && "Inserting a record should not fail.");
+        
+        rc = rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
         assert(rc == success && "Inserting a record should not fail.");
 
         rids.push_back(rid);
@@ -604,7 +643,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
                     sizeof(unsigned));
             ridsFile.write(reinterpret_cast<const char*>(&rids[i].slotNum),
                     sizeof(unsigned));
-            if (i % 1000 == 0) {
+            if (i % 444 == 0) {
                 cout << "RID #" << i << ": " << rids[i].pageNum << ", "
                         << rids[i].slotNum << endl;
             }
@@ -619,7 +658,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
         sizesFile.seekp(0, ios::beg);
         for (int i = 0; i < numRecords; i++) {
             sizesFile.write(reinterpret_cast<const char*>(&sizes[i]),sizeof(int));
-            if (i % 1000 == 0) {
+            if (i % 444 == 0) {
                 cout << "Sizes #" << i << ": " << sizes[i] << endl;
             }
         }
@@ -627,7 +666,8 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
     }
         
     cout << "RBF Test Case 9 Finished! The result will be examined." << endl << endl;
-
+    free(returnedData);
+    free(nullsIndicator);
     return 0;
 }
 
@@ -669,7 +709,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
         for (int i = 0; i < numRecords; i++) {
             ridsFileRead.read(reinterpret_cast<char*>(&pageNum), sizeof(unsigned));
             ridsFileRead.read(reinterpret_cast<char*>(&slotNum), sizeof(unsigned));
-            if (i % 1000 == 0) {
+            if (i % 444 == 0) {
                 cout << "loaded RID #" << i << ": " << pageNum << ", " << slotNum << endl;
             }
             tempRID.pageNum = pageNum;
@@ -690,7 +730,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
         sizesFileRead.seekg(0,ios::beg);
         for (int i = 0; i < numRecords; i++) {
             sizesFileRead.read(reinterpret_cast<char*>(&tempSize), sizeof(int));
-            if (i % 1000 == 0) {
+            if (i % 444 == 0) {
                 cout << "loaded Sizes #" << i << ": " << tempSize << endl;
             }
             sizes.push_back(tempSize);
@@ -712,7 +752,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
         rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
         assert(rc == success && "Reading a record should not fail.");
         
-        if (i % 1000 == 0) {
+        if (i % 444 == 0) {
             cout << endl << "Returned Data:" << endl;
             rbfm->printRecord(recordDescriptor, returnedData);
         }
@@ -722,6 +762,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
         if(memcmp(returnedData, record, sizes[i]) != 0)
         {
             cout << "[FAIL] Test Case 10 Failed!" << endl << endl;
+            free(nullsIndicator);
             free(record);
             free(returnedData);
             return -1;
@@ -740,6 +781,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
     rc = destroyFileShouldSucceed(fileName);
     assert(rc == success  && "Destroying the file should not fail.");
 
+    free(nullsIndicator);
     free(record);
     free(returnedData);
 
@@ -785,6 +827,10 @@ int main()
     vector<int> sizes;
     RBFTest_9(rbfm, rids, sizes);
     RBFTest_10(rbfm);
+    
+    //delete(pfm);
+    //delete(rbfm);
+    
     
     return 0;
 }
