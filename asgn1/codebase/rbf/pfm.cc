@@ -90,7 +90,7 @@ FileHandle::~FileHandle()
     fflush(openedFile);
     fclose(openedFile);
     
-    openFile = NULL;
+    openedFile = NULL;
 }
 
 

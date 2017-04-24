@@ -87,9 +87,15 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
                     memcpy(record + dir_offset, &data_offset, sizeof(uint16_t)); 
                 }
             }
-            dir_offset += sizeof(uint16_t);
+            
+        } else {
+           
+            // write "dir entry"
+            memcpy(record + dir_offset, &data_offset, sizeof(uint16_t));
             
         }
+        
+        dir_offset += sizeof(uint16_t);
         
     } 
      
@@ -263,7 +269,7 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
 // hex dump memory
 
     // cout << "page after adding record" << endl; 
-    // p = reinterpret_cast< const char *>( page );
+    // const char* p = reinterpret_cast< const char *>( page );
     // for ( unsigned int i = 0; i < PAGE_SIZE; i++ ) {
      // std::cout << hex << int(p[i]) << " ";
     // }

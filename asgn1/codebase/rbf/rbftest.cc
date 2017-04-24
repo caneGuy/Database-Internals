@@ -491,7 +491,9 @@ int RBFTest_8(RecordBasedFileManager *rbfm)
     unsigned char *nullsIndicator = (unsigned char *) malloc(nullFieldsIndicatorActualSize);
     memset(nullsIndicator, 0, nullFieldsIndicatorActualSize);
     
-    // nullsIndicator[0] = (char)160;
+    nullsIndicator[0] = (char)64;
+    
+    cout << "test" << endl;
 
     // Insert a record into a file and print the record
     prepareRecord(recordDescriptor.size(), nullsIndicator, 8, "Anteater", 26214, 1221.23, 6200, record, &recordSize);
@@ -825,6 +827,10 @@ int main()
     vector<int> sizes;
     RBFTest_9(rbfm, rids, sizes);
     RBFTest_10(rbfm);
+    
+    //delete(pfm);
+    //delete(rbfm);
+    
     
     return 0;
 }

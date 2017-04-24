@@ -125,10 +125,10 @@ IMPORTANT, PLEASE READ: All methods below this comment (other than the construct
       RBFM_ScanIterator &rbfm_ScanIterator);
 
 public:
+  ~RecordBasedFileManager();
 
 protected:
   RecordBasedFileManager();
-  ~RecordBasedFileManager();
 
 private:
   static RecordBasedFileManager *_rbf_manager;
