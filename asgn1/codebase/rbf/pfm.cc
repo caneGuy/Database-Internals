@@ -85,10 +85,12 @@ FileHandle::FileHandle()
 
 FileHandle::~FileHandle()
 {
-    if(openedFile != NULL) {
-        fflush(openedFile);
-        fclose(openedFile);
-    }
+    if(openedFile == NULL) return;
+    
+    fflush(openedFile);
+    fclose(openedFile);
+    
+    openFile = NULL;
 }
 
 
@@ -98,10 +100,6 @@ RC FileHandle::readPage(PageNum pageNum, void *data)
     if(pageNum >= totalPages) return -1;
 
     if(fseek(openedFile, pageNum * PAGE_SIZE, SEEK_SET) != 0) return -1;
-    // char buffer[PAGE_SIZE + 1];
-
-    // if(fgets(buffer, sizeof(buffer), openedFile) == NULL) return -1;
-    // if(memcpy(data, buffer, PAGE_SIZE) != data) return -1;
     if(fread(data, sizeof(char), PAGE_SIZE, openedFile) != PAGE_SIZE) return -1;
     
     readPageCounter += 1;
@@ -118,12 +116,6 @@ RC FileHandle::writePage(PageNum pageNum, const void *data)
     if(fseek(openedFile, PAGE_SIZE * pageNum, SEEK_SET) != 0) return -1;
     if(fwrite(data, sizeof(char), PAGE_SIZE, openedFile) != PAGE_SIZE) return -1;
     if(fflush(openedFile) != 0) return -1;    
-    
-    // const char * p = reinterpret_cast< const char *>( data );
-    // for ( unsigned int i = 0; i < PAGE_SIZE; i++ ) {
-     // std::cout << hex << int(p[i]) << " ";
-    // }
-    // std::cout << std::endl;
 
     writePageCounter += 1;
 
@@ -152,5 +144,8 @@ unsigned FileHandle::getNumberOfPages()
 
 RC FileHandle::collectCounterValues(unsigned &readPageCount, unsigned &writePageCount, unsigned &appendPageCount)
 {
-    return -1;
+    readPageCount = readPageCounter;
+    writePageCount = writePageCounter;
+    appendPageCount = appendPageCounter;
+    return 0;
 }

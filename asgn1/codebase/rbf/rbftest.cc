@@ -511,18 +511,18 @@ int RBFTest_8(RecordBasedFileManager *rbfm)
 
     cout << endl << "Returned Data:" << endl;    
         
-    const char * p = reinterpret_cast< const char *>( record );
-    for ( unsigned int i = 0; i < recordSize; i++ ) {
-     std::cout << hex << int(p[i]) << " ";
-    }
-    std::cout << std::endl;
+    // const char * p = reinterpret_cast< const char *>( record );
+    // for ( unsigned int i = 0; i < recordSize; i++ ) {
+     // std::cout << hex << int(p[i]) << " ";
+    // }
+    // std::cout << std::endl;
     
         
-    p = reinterpret_cast< const char *>( returnedData );
-    for ( unsigned int i = 0; i < recordSize; i++ ) {
-     std::cout << hex << int(p[i]) << " ";
-    }
-    std::cout << std::endl;
+    // p = reinterpret_cast< const char *>( returnedData );
+    // for ( unsigned int i = 0; i < recordSize; i++ ) {
+     // std::cout << hex << int(p[i]) << " ";
+    // }
+    // std::cout << std::endl;
     
     rbfm->printRecord(recordDescriptor, returnedData);
     cout << endl << "Returned Data:" << endl;
@@ -641,7 +641,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
                     sizeof(unsigned));
             ridsFile.write(reinterpret_cast<const char*>(&rids[i].slotNum),
                     sizeof(unsigned));
-            if (i % 1000 == 0) {
+            if (i % 444 == 0) {
                 cout << "RID #" << i << ": " << rids[i].pageNum << ", "
                         << rids[i].slotNum << endl;
             }
@@ -656,7 +656,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
         sizesFile.seekp(0, ios::beg);
         for (int i = 0; i < numRecords; i++) {
             sizesFile.write(reinterpret_cast<const char*>(&sizes[i]),sizeof(int));
-            if (i % 1000 == 0) {
+            if (i % 444 == 0) {
                 cout << "Sizes #" << i << ": " << sizes[i] << endl;
             }
         }
@@ -707,7 +707,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
         for (int i = 0; i < numRecords; i++) {
             ridsFileRead.read(reinterpret_cast<char*>(&pageNum), sizeof(unsigned));
             ridsFileRead.read(reinterpret_cast<char*>(&slotNum), sizeof(unsigned));
-            if (i % 1000 == 0) {
+            if (i % 444 == 0) {
                 cout << "loaded RID #" << i << ": " << pageNum << ", " << slotNum << endl;
             }
             tempRID.pageNum = pageNum;
@@ -728,7 +728,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
         sizesFileRead.seekg(0,ios::beg);
         for (int i = 0; i < numRecords; i++) {
             sizesFileRead.read(reinterpret_cast<char*>(&tempSize), sizeof(int));
-            if (i % 1000 == 0) {
+            if (i % 444 == 0) {
                 cout << "loaded Sizes #" << i << ": " << tempSize << endl;
             }
             sizes.push_back(tempSize);
@@ -750,7 +750,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
         rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
         assert(rc == success && "Reading a record should not fail.");
         
-        if (i % 1000 == 0) {
+        if (i % 444 == 0) {
             cout << endl << "Returned Data:" << endl;
             rbfm->printRecord(recordDescriptor, returnedData);
         }
