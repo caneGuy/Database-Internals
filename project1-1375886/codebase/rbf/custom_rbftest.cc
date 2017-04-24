@@ -828,9 +828,6 @@ int main()
     RBFTest_9(rbfm, rids, sizes);
     RBFTest_10(rbfm);
     
-    //delete(pfm);
-    //delete(rbfm);
-    
     
     return 0;
 }
