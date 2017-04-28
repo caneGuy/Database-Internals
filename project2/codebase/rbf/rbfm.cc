@@ -182,14 +182,6 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
     
     int readpage_rc = fileHandle.readPage(rid.pageNum, page);
     if(readpage_rc != 0) return -1;   
-
-        
-    // cout << "page after adding record" << endl; 
-    // const char* p = reinterpret_cast< const char *>( page );
-    // for ( unsigned int i = 0; i < PAGE_SIZE; i++ ) {
-     // std::cout <<  int(p[i]) << " ";
-    // }
-     // cout << endl << "page end:" << endl;
     
     uint16_t record_count;
     uint16_t free_space;
@@ -197,12 +189,40 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
     memcpy(&free_space, &page[PAGE_SIZE - 2], sizeof(uint16_t));  
     if(rid.slotNum > record_count) return -1;
     
-    uint16_t record_offset;
-    memcpy(&record_offset,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum)], sizeof(uint16_t));
+    int16_t record_offset;
+    memcpy(&record_offset,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum)], sizeof(int16_t));
+    
+    if (record_offset < 0) {
+        cout << "DELETE: This record was moved to a different page!" << endl;
+        cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        
+        uint16_t pageNum;
+        memcpy(&pageNum,  &page[PAGE_SIZE - 2 - (4 * rid.slotNum)], sizeof(uint16_t));
+        
+        RID new_rid;
+        new_rid.pageNum = pageNum;
+        new_rid.slotNum = record_offset * (-1);       
+        cout << "New RID: " << new_rid.pageNum << "." << new_rid.slotNum << endl;
+ 
+        if (deleteRecord(fileHandle, recordDescriptor, new_rid) != 0) return -1;    
+    
+        int32_t dummy = -1;
+        memcpy(&page[PAGE_SIZE - 4 - (4 * rid.slotNum)], &dummy, sizeof(int32_t));
+
+        if (fileHandle.writePage(rid.pageNum, page) != 0) return -1;
+        
+        free(page);
+        return 0;        
+        
+    }
+    
     uint16_t record_length;
     memcpy(&record_length,  &page[PAGE_SIZE - 2 - (4 * rid.slotNum)], sizeof(uint16_t));
     
     // move data
+    cout << "record_offset: " << record_offset << endl;
+    cout << "record_length: " << record_length << endl;
+    cout << "free_space: " << free_space << endl;
     memmove(&page[record_offset], &page[record_offset + record_length], free_space - record_offset - record_length);
     
     // update free space
@@ -220,14 +240,6 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
     
     int32_t dummy = -1;
     memcpy(&page[PAGE_SIZE - 4 - (4 * rid.slotNum)], &dummy, sizeof(int32_t));
-    
-    
-    // cout << "page after adding record" << endl; 
-    // p = reinterpret_cast< const char *>( page );
-    // for ( unsigned int i = 0; i < PAGE_SIZE; i++ ) {
-     // std::cout << int(p[i]) << " ";
-    // }
-     // cout << endl << "page end:" << endl;
 
     if (fileHandle.writePage(rid.pageNum, page) != 0) return -1;
     
