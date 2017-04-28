@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <cassert>
 
 #include "../rbf/rbfm.h"
 
@@ -71,6 +72,7 @@ protected:
 private:
   static RelationManager *_rm;
   RecordBasedFileManager *_rbfm;
+  FILE *stats;
   
   RC prepareTableRecord(const int tableId, const int nameLength, const string &name, const int fileLength, const string &file, const int privileged, void *buffer, int *tupleSize);  
   RC prepareColumnRecord(const int tableId, const int nameLength, const string &name, const int colType, const int colLength, const int colPos, void *buffer, int *tupleSize);
@@ -83,6 +85,9 @@ private:
 
   RC insertTableRecord(FileHandle &fh, const int tableId, const string name, const string ending, const int privileged);
   RC insertColumnRecord(FileHandle &fh, const int tableId, const string name, const int colType, const int colLength, const int colPos);
+
+  int getMaxTableId();
+  RC setMaxTableId(int id);
 };
 
 #endif

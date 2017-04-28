@@ -14,11 +14,15 @@ RelationManager* RelationManager::instance()
 RelationManager::RelationManager()
 {
    _rbfm = RecordBasedFileManager::instance();
+   stats = fopen("tables.stat", "ab+");
+   assert(stats != NULL);
 }
 
 RelationManager::~RelationManager()
 {
    _rbfm = NULL;
+   fflush(stats);
+   fclose(stats);
 }
 
 RC RelationManager::createCatalog()
@@ -30,6 +34,7 @@ RC RelationManager::createCatalog()
     cout << "Created catalog tbl files" << endl;
     tbl_rc = insertTableRecords();
     col_rc = insertColumnRecords();
+    cout << "insertTableRecords: " << tbl_rc << " insertColumnRecords: " << col_rc << endl;
     if(tbl_rc != 0 || col_rc != 0) return -1;
 
     return 0;
@@ -41,12 +46,44 @@ RC RelationManager::deleteCatalog()
     int col_rc = _rbfm->destroyFile("columns.tbl");
     if(tbl_rc != 0 || col_rc != 0) return -1;
 
-    return -1;
+    FILE* rc = fopen("tables.stat", "w");
+    if(rc == NULL) return -1;    
+
+    return 0;
 }
 
 RC RelationManager::createTable(const string &tableName, const vector<Attribute> &attrs)
 {
-    return -1;
+   int rc = _rbfm->createFile(tableName + ".tbl");
+   if(rc != 0) return -1;
+
+   FileHandle fh;
+   rc = _rbfm->openFile("tables.tbl", fh);
+   if(rc != 0) return -1;
+
+   int maxId = getMaxTableId() + 1;
+   rc = insertTableRecord(fh, maxId, tableName, tableName + ".tbl", TBL_USER);
+   if(rc != 0) return -1;
+ 
+   rc = setMaxTableId(maxId);
+   if(rc != 0) return -1;
+
+   rc = _rbfm->closeFile(fh);
+   if(rc != 0) return -1;
+
+   rc = _rbfm->openFile("columns.tbl", fh);
+   if(rc != 0) return -1;
+
+   for(unsigned int i = 0; i < attrs.size(); ++i) {
+      Attribute attr = attrs.at(i);
+      rc = insertColumnRecord(fh, maxId, attr.name, attr.type, attr.length, i+1);   
+      if(rc != 0) return -1;
+   }
+
+   rc = _rbfm->closeFile(fh);
+   if(rc != 0) return -1;
+   
+   return 0;
 }
 
 RC RelationManager::deleteTable(const string &tableName)
@@ -156,11 +193,10 @@ RC RelationManager::prepareTableRecord(const int tableId, const int nameLength, 
    memcpy((char *)buffer + offset, &fileLength, sizeof(int));
    offset += sizeof(int);
 
-   cout << "File: " << file << endl;
    memcpy((char *)buffer + offset, file.c_str(), fileLength);
    offset += fileLength;
 
-   cout << "privlege bit: " << privileged << endl; 
+   cout << "Privlege byte: " << privileged << endl; 
    memcpy((char *)buffer + offset, &privileged, sizeof(int));
    offset += sizeof(int);
 
@@ -177,11 +213,21 @@ RC RelationManager::insertTableRecords() {
    if(rc != 0) return -1;
    cout << "Opened tables.tbl fh" << endl;
 
-   rc = insertTableRecord(fh, 1, "tables", "tables.tbl", TBL_SYS);
+   int tableId = getMaxTableId() + 1;
+   rc = insertTableRecord(fh, tableId, "tables", "tables.tbl", TBL_SYS);
    if(rc != 0) return -1;
    cout << "Inserted tables record into tables.tbl file" << endl;
 
-   rc = insertTableRecord(fh, 2, "columns", "columns.tbl", TBL_SYS);
+   tableId += 1;
+   rc = insertTableRecord(fh, tableId, "columns", "columns.tbl", TBL_SYS);
+   if(rc != 0) return -1;
+
+   rc = _rbfm->closeFile(fh);
+   cout << "Close file: " << rc << endl;
+   if(rc != 0) return -1;
+
+   rc = setMaxTableId(tableId);
+   cout << "Set max id: " << rc << endl;
    if(rc != 0) return -1;
    
    return 0;
@@ -219,6 +265,9 @@ RC RelationManager::insertColumnRecords() {
    if(rc != 0) return -1;
    
    rc = insertColumnRecord(fh, 1, "column-position", TypeInt, 4, 4);
+   if(rc != 0) return -1;
+
+   rc = _rbfm->closeFile(fh);
    if(rc != 0) return -1;
    
    cout << "Inserted cols record into cols.tbl file" << endl;
@@ -362,5 +411,21 @@ RC RelationManager::insertColumnRecord(FileHandle &fh, const int tableId, const 
    }
    cout << endl << "Inserted end" << endl;
    
+   return 0;
+}
+
+int RelationManager::getMaxTableId() {
+   int maxId;
+   int rc = fread(&maxId, sizeof(int), 1, stats);
+   if(rc == 0) maxId = 0;
+   
+   cout << "Max table ID: " << maxId << endl; 
+   return maxId;
+}
+
+RC RelationManager::setMaxTableId(int maxId) {
+   int rc = fwrite(&maxId, sizeof(int), 1, stats);
+   if (rc != 1) return -1;
+
    return 0;
 }
