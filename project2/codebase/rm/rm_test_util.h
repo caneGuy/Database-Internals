@@ -380,7 +380,7 @@ void writeRIDsToDisk(vector<RID> &rids)
 
 	if (ridsFile.is_open()) {
 		ridsFile.seekp(0, ios::beg);
-		for (int i = 0; i < rids.size(); i++) {
+		for (unsigned int i = 0; i < rids.size(); i++) {
 			ridsFile.write(reinterpret_cast<const char*>(&rids[i].pageNum),
 					sizeof(unsigned));
 			ridsFile.write(reinterpret_cast<const char*>(&rids[i].slotNum),
@@ -399,7 +399,7 @@ void writeSizesToDisk(vector<int> &sizes)
 
 	if (sizesFile.is_open()) {
 		sizesFile.seekp(0, ios::beg);
-		for (int i = 0; i < sizes.size(); i++) {
+		for (unsigned int i = 0; i < sizes.size(); i++) {
 			//cout << sizes[i] << endl;
 			sizesFile.write(reinterpret_cast<const char*>(&sizes[i]),
 					sizeof(int));

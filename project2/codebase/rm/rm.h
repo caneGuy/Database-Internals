@@ -10,6 +10,8 @@
 using namespace std;
 
 # define RM_EOF (-1)  // end of a scan operator
+# define TBL_SYS 0
+# define TBL_USER 1
 
 // RM_ScanIterator is an iteratr to go through tuples
 class RM_ScanIterator {
@@ -62,13 +64,25 @@ public:
       const vector<string> &attributeNames, // a list of projected attributes
       RM_ScanIterator &rm_ScanIterator);
 
-
 protected:
   RelationManager();
   ~RelationManager();
 
 private:
   static RelationManager *_rm;
+  RecordBasedFileManager *_rbfm;
+  
+  RC prepareTableRecord(const int tableId, const int nameLength, const string &name, const int fileLength, const string &file, const int privileged, void *buffer, int *tupleSize);  
+  RC prepareColumnRecord(const int tableId, const int nameLength, const string &name, const int colType, const int colLength, const int colPos, void *buffer, int *tupleSize);
+
+  vector<Attribute> columnsColumns();
+  vector<Attribute> tablesColumns();
+  
+  RC insertColumnRecords();
+  RC insertTableRecords();
+
+  RC insertTableRecord(FileHandle &fh, const int tableId, const string name, const string ending, const int privileged);
+  RC insertColumnRecord(FileHandle &fh, const int tableId, const string name, const int colType, const int colLength, const int colPos);
 };
 
 #endif
