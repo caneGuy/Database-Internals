@@ -42,6 +42,11 @@ RC RelationManager::createCatalog()
 
 RC RelationManager::deleteCatalog()
 {
+    //FileHandle fh;
+    //int rc = _rbfm->openFile("tables.tbl", fh);
+    //if(rc != 0) return -1;
+    
+   
     int tbl_rc = _rbfm->destroyFile("tables.tbl");
     int col_rc = _rbfm->destroyFile("columns.tbl");
     if(tbl_rc != 0 || col_rc != 0) return -1;
@@ -55,6 +60,7 @@ RC RelationManager::deleteCatalog()
 RC RelationManager::createTable(const string &tableName, const vector<Attribute> &attrs)
 {
    int rc = _rbfm->createFile(tableName + ".tbl");
+   cout << "Created " << (tableName + ".tbl: ") << rc << endl; 
    if(rc != 0) return -1;
 
    FileHandle fh;
@@ -63,8 +69,10 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
 
    int maxId = getMaxTableId() + 1;
    rc = insertTableRecord(fh, maxId, tableName, tableName + ".tbl", TBL_USER);
+   cout << "Insert table rec (crateTable) " << rc << endl;
    if(rc != 0) return -1;
  
+   maxId += 1;
    rc = setMaxTableId(maxId);
    if(rc != 0) return -1;
 
@@ -77,6 +85,7 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
    for(unsigned int i = 0; i < attrs.size(); ++i) {
       Attribute attr = attrs.at(i);
       rc = insertColumnRecord(fh, maxId, attr.name, attr.type, attr.length, i+1);   
+      cout << "Create table insert col rec: " << rc << endl;
       if(rc != 0) return -1;
    }
 
@@ -416,7 +425,10 @@ RC RelationManager::insertColumnRecord(FileHandle &fh, const int tableId, const 
 
 int RelationManager::getMaxTableId() {
    int maxId;
-   int rc = fread(&maxId, sizeof(int), 1, stats);
+   int rc = fseek(stats, 0, SEEK_SET);
+   if(rc != 0) return -1;
+
+   rc = fread(&maxId, sizeof(int), 1, stats);
    if(rc == 0) maxId = 0;
    
    cout << "Max table ID: " << maxId << endl; 
@@ -424,8 +436,14 @@ int RelationManager::getMaxTableId() {
 }
 
 RC RelationManager::setMaxTableId(int maxId) {
-   int rc = fwrite(&maxId, sizeof(int), 1, stats);
+   int rc = fseek(stats, 0, SEEK_SET);
+   if (rc != 0) return -1;
+
+   rc = fwrite(&maxId, sizeof(int), 1, stats);
    if (rc != 1) return -1;
+   
+   rc = fflush(stats);
+   if(rc != 0) return -1;
 
    return 0;
 }
