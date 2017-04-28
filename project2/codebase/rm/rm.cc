@@ -244,6 +244,11 @@ vector<Attribute> RelationManager::tablesColumns() {
    attr.length = (AttrLength)50;
    recordDescriptor.push_back(attr);
    
+   attr.name = "privileged";
+   attr.type = TypeInt;
+   attr.length = (AttrLength)4;
+   recordDescriptor.push_back(attr);
+
    return recordDescriptor;
 }
 
@@ -290,7 +295,6 @@ RC RelationManager::insertTableRecord(FileHandle &fh, const int tableId, const s
    
    void *record = malloc(size);
    cout << "After malloc of record" << endl;
-
    prepareTableRecord(tableId, name.length(), name, fileName.length(), fileName, privileged, record, &recordSize);
    int rc = _rbfm->insertRecord(fh, recordDescriptor, record, rid);
    if(rc != 0) return -1;
