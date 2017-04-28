@@ -131,6 +131,9 @@ protected:
 
 private:
   static RecordBasedFileManager *_rbf_manager;
+  RC tryInsert(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, const RID &rid);
+  uint16_t makeRecord(const vector<Attribute> &recordDescriptor, const void *data, char *record);
+  
 };
 
 #endif

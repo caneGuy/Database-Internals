@@ -55,7 +55,7 @@ void prepareLargeRecord(const int index, void *buffer, int *size)
     int count = index % 50 + 1;
 
     // compute the letter
-    char text = index % 26 + 97;
+    char text = index % 26 + 914;
 
     for (int i = 0; i < 10; i++)
     {
@@ -339,7 +339,7 @@ int RBFTest_6(PagedFileManager *pfm)
     }
 }
 
-int RBFTest_7(PagedFileManager *pfm)
+int RBFTest_14(PagedFileManager *pfm)
 {
     // Functions Tested:
     // 1. Create File
@@ -348,9 +348,9 @@ int RBFTest_7(PagedFileManager *pfm)
     // 4. Get Number Of Pages
     // 5. Read Page
     // 6. Write Page
-    // 7. Close File
+    // 14. Close File
     // 8. Destroy File
-    cout << "****In RBF Test Case 7****" << endl;
+    cout << "****In RBF Test Case 14****" << endl;
 
     RC rc;
     string fileName = "test_2";
@@ -366,7 +366,7 @@ int RBFTest_7(PagedFileManager *pfm)
     else
     {
         cout << "Failed to create file!" << endl;
-        cout << "Test Case 7 Failed!" << endl
+        cout << "Test Case 14 Failed!" << endl
              << endl;
         return -1;
     }
@@ -435,14 +435,14 @@ int RBFTest_7(PagedFileManager *pfm)
     if (!FileExists(fileName.c_str()))
     {
         cout << "File " << fileName << " has been destroyed." << endl;
-        cout << "Test Case 7 Passed!" << endl
+        cout << "Test Case 14 Passed!" << endl
              << endl;
         return 0;
     }
     else
     {
         cout << "Failed to destroy file!" << endl;
-        cout << "Test Case 7 Failed!" << endl
+        cout << "Test Case 14 Failed!" << endl
              << endl;
         return -1;
     }
@@ -488,7 +488,7 @@ int RBFTest_8(RecordBasedFileManager *rbfm)
     memset(nullsIndicator, 0, nullFieldsIndicatorActualSize);
 
     // Insert a record into a file and print the record
-    prepareRecord(recordDescriptor.size(), nullsIndicator, 8, "Anteater", 25, 177.8, 6200, record, &recordSize);
+    prepareRecord(recordDescriptor.size(), nullsIndicator, 8, "Anteater", 25, 11414.8, 6200, record, &recordSize);
     cout << endl << "Inserting Data:" << endl;
     rbfm->printRecord(recordDescriptor, record);
     
@@ -712,13 +712,27 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
         rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
         assert(rc == success && "Reading a record should not fail.");
         
-        cout << hex << i << endl;
+        // cout << hex << i << endl;
         
-        if (i % 7 == 0) {
-            cout << endl << "Returned Data:" << endl;
+        if (i % 1000 == 3) {
+            cout << endl << "Returned Data: " << rids[3].slotNum << endl;
             rbfm->printRecord(recordDescriptor, returnedData);
-            rc = rbfm->deleteRecord(fileHandle, recordDescriptor, rids[i]);
-            rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
+            
+            int test = 13;
+            rbfm->readRecord(fileHandle, recordDescriptor, rids[test], returnedData);
+            cout << endl << "Returned Data: " << rids[test].pageNum << '.' << rids[test].slotNum << endl;          
+            rbfm->printRecord(recordDescriptor, returnedData);
+            
+            rbfm->updateRecord(fileHandle, recordDescriptor, returnedData, rids[3]);
+            
+                   
+            
+            rbfm->readRecord(fileHandle, recordDescriptor, rids[3], returnedData);
+            cout << endl << "Returned Data: " << rids[3].slotNum << endl;          
+            rbfm->printRecord(recordDescriptor, returnedData);
+            
+            // rc = rbfm->deleteRecord(fileHandle, recordDescriptor, rids[i]);
+            // rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
             return -1;
         }
 
@@ -782,7 +796,7 @@ int main()
     RBFTest_4(pfm);
     RBFTest_5(pfm);
     RBFTest_6(pfm);
-    RBFTest_7(pfm);
+    RBFTest_14(pfm);
   
     RBFTest_8(rbfm);
 
