@@ -78,14 +78,29 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
         freeSpace = 0;
         recordCount = 0;
     }
-     
+         
+    // fill in RID assuming it'll be appended to the directory
     recordCount++;
+    rid.slotNum = recordCount;
+    rid.pageNum = currPage;
+    // check for dir entries which indicate deletion, overwrite slotNum and Count if necessary
+    for (int i = 1; i < recordCount; ++i) {
+        
+        int16_t slotNum;
+        memcpy(&slotNum, &page[PAGE_SIZE - 4 - (4 * i)], sizeof(int16_t));
+        if (slotNum == deleted_entry) {
+            rid.slotNum = i;
+            recordCount--;
+            break;
+        }
+        
+    }
     
     // write acutal record
     memcpy(page + freeSpace, record, record_length);    
     
     // write entry in page directory
-    int page_dir = PAGE_SIZE - (4 * recordCount + 4);
+    int page_dir = PAGE_SIZE - (4 * rid.slotNum + 4);
     memcpy(page + page_dir    , &freeSpace, sizeof(uint16_t));
     memcpy(page + page_dir + 2, &record_length, sizeof(uint16_t));
     
@@ -103,8 +118,6 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
     }
     if (append_rc != 0) return -1;
     
-    rid.slotNum = recordCount;
-    rid.pageNum = currPage;
     free(record);
     free(page);
     
@@ -125,6 +138,12 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
     
     int16_t record;
     memcpy(&record,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum)], sizeof(int16_t));
+    
+    if (record == deleted_entry) {
+        cout << "This entry was deleted" << endl;
+        cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        return -1;
+    }
     
     if (record < 0) {
         cout << "This record was moved to a different page!" << endl;
@@ -190,7 +209,13 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
     if(rid.slotNum > record_count) return -1;
     
     int16_t record_offset;
-    memcpy(&record_offset,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum)], sizeof(int16_t));
+    memcpy(&record_offset,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum)], sizeof(int16_t));    
+        
+    if (record_offset == deleted_entry) {
+        cout << "This entry was deleted" << endl;
+        cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        return -1;
+    }
     
     if (record_offset < 0) {
         cout << "DELETE: This record was moved to a different page!" << endl;
@@ -204,10 +229,11 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
         new_rid.slotNum = record_offset * (-1);       
         cout << "New RID: " << new_rid.pageNum << "." << new_rid.slotNum << endl;
  
+        // delete the record from the page where it is actually located
         if (deleteRecord(fileHandle, recordDescriptor, new_rid) != 0) return -1;    
     
-        int32_t dummy = -1;
-        memcpy(&page[PAGE_SIZE - 4 - (4 * rid.slotNum)], &dummy, sizeof(int32_t));
+        // overwrite this dir entry to indicated deletion
+        memcpy(&page[PAGE_SIZE - 4 - (4 * rid.slotNum)], &deleted_entry, sizeof(int16_t));
 
         if (fileHandle.writePage(rid.pageNum, page) != 0) return -1;
         
@@ -219,10 +245,11 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
     uint16_t record_length;
     memcpy(&record_length,  &page[PAGE_SIZE - 2 - (4 * rid.slotNum)], sizeof(uint16_t));
     
+    // cout << "record_offset: " << record_offset << endl;
+    // cout << "record_length: " << record_length << endl;
+    // cout << "free_space: " << free_space << endl;
+    
     // move data
-    cout << "record_offset: " << record_offset << endl;
-    cout << "record_length: " << record_length << endl;
-    cout << "free_space: " << free_space << endl;
     memmove(&page[record_offset], &page[record_offset + record_length], free_space - record_offset - record_length);
     
     // update free space
@@ -230,16 +257,19 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
     memcpy(&page[PAGE_SIZE - 2], &free_space, sizeof(uint16_t));  
     
     // update dir entries
-    for (int i = rid.slotNum + 1; i <= record_count; ++i) {
+    for (int i = 1; i <= record_count; ++i) {
         
-        memcpy(&record_offset,  &page[PAGE_SIZE - 4 - (4 * i)], sizeof(uint16_t));
-        record_offset -= record_length;       
-        memcpy(&page[PAGE_SIZE - 4 - (4 * i)], &record_offset, sizeof(uint16_t)); 
+        int16_t i_record_offset;
+        memcpy(&i_record_offset, &page[PAGE_SIZE - 4 - (4 * i)], sizeof(int16_t));
+        
+        if (i_record_offset > record_offset) {
+            i_record_offset -= record_length;       
+            memcpy(&page[PAGE_SIZE - 4 - (4 * i)], &i_record_offset, sizeof(uint16_t)); 
+        }
         
     }    
     
-    int32_t dummy = -1;
-    memcpy(&page[PAGE_SIZE - 4 - (4 * rid.slotNum)], &dummy, sizeof(int32_t));
+    memcpy(&page[PAGE_SIZE - 4 - (4 * rid.slotNum)], &deleted_entry, sizeof(int16_t));
 
     if (fileHandle.writePage(rid.pageNum, page) != 0) return -1;
     
@@ -265,6 +295,7 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
     int readpage_rc = fileHandle.readPage(rid.pageNum, page);
     if(readpage_rc != 0) return -1;     
     
+    // overwrite the dir entrie on the old page to point to the new location
      int16_t new_slotNum = new_rid.slotNum * (-1);
     uint16_t new_pageNum = new_rid.pageNum;
     memcpy(&page[PAGE_SIZE - 4 - (4 * rid.slotNum)], &new_slotNum, sizeof( int16_t));
@@ -274,6 +305,77 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
     free(page);
     
     return 0;
+    
+}
+
+RC readAttribute(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, const string &attributeName, void *data){
+  
+    char *page = (char*) calloc(PAGE_SIZE, sizeof(char));      
+    
+    int readpage_rc = fileHandle.readPage(rid.pageNum, page);
+    if(readpage_rc != 0) return -1;   
+
+    uint16_t count;
+    memcpy(&count, &page[PAGE_SIZE - 4], sizeof(uint16_t));
+    if(rid.slotNum > count) return -1;
+    
+    int16_t record;
+    memcpy(&record,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum)], sizeof(int16_t));
+    
+    if (record == deleted_entry) {
+        cout << "This entry was deleted" << endl;
+        cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        return -1;
+    }
+    
+    if (record < 0) {
+        cout << "This record was moved to a different page!" << endl;
+        cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        
+        uint16_t pageNum;
+        memcpy(&pageNum,  &page[PAGE_SIZE - 2 - (4 * rid.slotNum)], sizeof(uint16_t));
+        
+        RID new_rid;
+        new_rid.pageNum = pageNum;
+        new_rid.slotNum = record * (-1);       
+        cout << "New RID: " << new_rid.pageNum << "." << new_rid.slotNum << endl;
+ 
+        return readAttribute(fileHandle, recordDescriptor, new_rid, attributeName, data);
+    }
+     
+    uint16_t fieldCount;
+    memcpy(&fieldCount, &page[record], sizeof(uint16_t));
+    if (fieldCount != recordDescriptor.size()) return -1;
+
+    uint16_t nullvec = ceil(fieldCount / 8.0);
+    // memcpy(data, &page[record + sizeof(uint16_t)], nullvec);
+    
+    uint16_t directory = record + sizeof(uint16_t) + nullvec;
+    
+    uint16_t offset = sizeof(uint16_t) + nullvec + fieldCount * sizeof(uint16_t);
+    uint16_t prev_offset = offset;
+    char *data_c = (char*)data+nullvec;
+    
+    for(uint16_t i = 0; i < fieldCount; ++i) {
+        char target = *((char*)data + (char)(i/8));
+        if (!(target & (1<<(7-i%8)))) {
+            memcpy(&offset, &page[directory + i * sizeof(uint16_t)], sizeof(uint16_t));
+            if (recordDescriptor[i].type == TypeVarChar) {
+                int attlen = offset - prev_offset;
+                memcpy(&data_c[0], &attlen, sizeof(int));
+                memcpy(&data_c[4], &page[record + prev_offset], attlen);
+                data_c += (4 + attlen);                
+            } else {
+                memcpy(&data_c[0], &page[record + prev_offset], sizeof(int));
+                data_c += sizeof(int); 
+            }
+        }
+        prev_offset = offset;
+    }
+    free(page);
+
+    return 0;
+    
     
 }
 
@@ -328,7 +430,7 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
 
 RC RecordBasedFileManager::tryInsert(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, const RID &rid) {
    
-    char *record = (char*)calloc(1000, sizeof(char));
+    char *record = (char*)calloc(PAGE_SIZE, sizeof(char));
     
     uint16_t record_length = makeRecord(recordDescriptor, data, record);
      
@@ -348,8 +450,8 @@ RC RecordBasedFileManager::tryInsert(FileHandle &fileHandle, const vector<Attrib
     }
     
     cout << "updated record fit on same page" << endl;
-    // cout << "free space is: " << freeSpace << endl;
-    // cout << "record_length is: " << record_length << endl;
+    cout << "free space is: " << freeSpace << endl;
+    cout << "record_length is: " << record_length << endl;
     
     // write acutal record
     memcpy(page + freeSpace, record, record_length);    
