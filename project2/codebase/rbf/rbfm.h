@@ -11,6 +11,8 @@
 
 using namespace std;
 
+const int16_t deleted_entry = 0x80;
+
 // Record ID
 typedef struct
 {

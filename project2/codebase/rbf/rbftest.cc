@@ -718,18 +718,40 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
             cout << endl << "Returned Data: " << rids[3].slotNum << endl;
             rbfm->printRecord(recordDescriptor, returnedData);
             
-            int test = 13;
+            int test = i-2;
             rbfm->readRecord(fileHandle, recordDescriptor, rids[test], returnedData);
             cout << endl << "Returned Data: " << rids[test].pageNum << '.' << rids[test].slotNum << endl;          
             rbfm->printRecord(recordDescriptor, returnedData);
             
-            rbfm->updateRecord(fileHandle, recordDescriptor, returnedData, rids[3]);
+            rbfm->updateRecord(fileHandle, recordDescriptor, returnedData, rids[i]);
+            rbfm->updateRecord(fileHandle, recordDescriptor, returnedData, rids[i]);
+            rbfm->updateRecord(fileHandle, recordDescriptor, returnedData, rids[i]);
+            rbfm->updateRecord(fileHandle, recordDescriptor, returnedData, rids[i]);
+            rbfm->updateRecord(fileHandle, recordDescriptor, returnedData, rids[i]);
+            rbfm->updateRecord(fileHandle, recordDescriptor, returnedData, rids[i]);
+            rbfm->updateRecord(fileHandle, recordDescriptor, returnedData, rids[i]);
+            
+            RID rid;
+            // rbfm->deleteRecord(fileHandle, recordDescriptor, rids[i]);
+            // rbfm->insertRecord(fileHandle, recordDescriptor, returnedData, rid);
+            // cout << rid.pageNum << '.' << rid.slotNum << endl;
+            
+            // for (int p=0; p<50; ++p) {
+                // rbfm->deleteRecord(fileHandle, recordDescriptor, rid);
+                // rbfm->insertRecord(fileHandle, recordDescriptor, returnedData, rid);
+                // cout << rid.pageNum << '.' << rid.slotNum << endl;
+            // }
+            
+            rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
+            
             
                    
             
-            rbfm->readRecord(fileHandle, recordDescriptor, rids[3], returnedData);
-            cout << endl << "Returned Data: " << rids[3].slotNum << endl;          
+            rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
+            cout << endl << "Returned Data: " << rids[i].slotNum << endl;          
             rbfm->printRecord(recordDescriptor, returnedData);
+            
+            cout << "here" << endl;
             
             // rc = rbfm->deleteRecord(fileHandle, recordDescriptor, rids[i]);
             // rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
@@ -747,6 +769,18 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
                 return -1;
             }
         }
+    }
+    
+    rbfm->deleteRecord(fileHandle, recordDescriptor, rids[1998]);
+    cout << "1998: " << rids[1998].pageNum << '.' << rids[1998].slotNum << endl;
+    rbfm->deleteRecord(fileHandle, recordDescriptor, rids[1995]);
+    cout << "1995: " << rids[1995].pageNum << '.' << rids[1995].slotNum << endl;
+    RID rid;
+    for (int p=0; p<50; ++p) {
+        rbfm->insertRecord(fileHandle, recordDescriptor, returnedData, rid);
+        cout << rid.pageNum << '.' << rid.slotNum << endl;
+        if (p%2 == 0)
+            rbfm->deleteRecord(fileHandle, recordDescriptor, rid);
     }
     
     cout << endl;
