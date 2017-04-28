@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <climits>
+#include <iostream>
+#include <cstring>
 
 #include "../rbf/pfm.h"
 
@@ -104,10 +106,7 @@ public:
   // (e.g., age: 24  height: 6.1  salary: 9000
   //        age: NULL  height: 7.5  salary: 7500)
   RC printRecord(const vector<Attribute> &recordDescriptor, const void *data);
-
-/******************************************************************************************************************************************************************
-IMPORTANT, PLEASE READ: All methods below this comment (other than the constructor and destructor) are NOT required to be implemented for the part 1 of the project
-******************************************************************************************************************************************************************/
+  
   RC deleteRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid);
 
   // Assume the RID does not change after an update
@@ -125,9 +124,9 @@ IMPORTANT, PLEASE READ: All methods below this comment (other than the construct
       RBFM_ScanIterator &rbfm_ScanIterator);
 
 public:
-  ~RecordBasedFileManager();
 
 protected:
+  ~RecordBasedFileManager();
   RecordBasedFileManager();
 
 private:

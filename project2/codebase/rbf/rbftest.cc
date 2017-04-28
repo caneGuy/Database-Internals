@@ -705,16 +705,21 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
     unsigned char *nullsIndicator = (unsigned char *) malloc(nullFieldsIndicatorActualSize);
     memset(nullsIndicator, 0, nullFieldsIndicatorActualSize);
 
-    for(int i = 0; i < numRecords; i++)
+    for(int i = 1; i < numRecords; i++)
     {
         memset(record, 0, 1000);
         memset(returnedData, 0, 1000);
         rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
         assert(rc == success && "Reading a record should not fail.");
         
-        if (i % 1000 == 0) {
+        cout << hex << i << endl;
+        
+        if (i % 7 == 0) {
             cout << endl << "Returned Data:" << endl;
             rbfm->printRecord(recordDescriptor, returnedData);
+            rc = rbfm->deleteRecord(fileHandle, recordDescriptor, rids[i]);
+            rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
+            return -1;
         }
 
         int size = 0;
