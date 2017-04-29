@@ -306,14 +306,7 @@ RC RelationManager::scan(const string &tableName,
     cout << "scanning for table: " << tableName << endl;
     cout << "scan value: " << (char *) value << endl;
 
-    //std::string *sp = reinterpret_cast<const string*>(value);
-    //cout << "value cast: " << sp << endl;
-   cout << "Inserted start" << endl; 
-   const char* p = reinterpret_cast< const char *>(value);
-   for ( unsigned int i = 0; i < 25; i++ ) {
-        cout << hex  << int(p[i]) << " ";
-   }
-   cout << endl << "Inserted end" << endl;
+
 
 	const vector<string> tblAttrs ({"table-id", "table-name", "file-name", "privileged"});
 	rc = _rbfm->scan(fh, tablesColumns(), "table-name", EQ_OP, value, tblAttrs, *rbfmScanIterator);
@@ -336,7 +329,7 @@ RC RelationManager::scan(const string &tableName,
     
     int tableId;
     memcpy(&tableId, (char *)returnedData + 1, sizeof(int));
-    cout << "Table: (" << tableName << ", " << tableId << ")"  << endl;
+    cout << "Table: (" << (char*)value << ", " << tableId << ")"  << endl;
 
     rc = _rbfm->closeFile(fh);
     if(rc != 0) return -1;
@@ -344,8 +337,8 @@ RC RelationManager::scan(const string &tableName,
     rc = _rbfm->openFile("columns.tbl", fh);
     if(rc != 0) return -1;
 
-    const vector<string> colAttrs ({"column-name", "column-type", "column-length"});
-    rc = _rbfm->scan(fh, columnsColumns(), "table-id", EQ_OP, (void *)&tableId, colAttrs, *rbfmScanIterator);
+    const vector<string> colAttrs ({"table-id", "column-name", "column-type", "column-length", "column-position"});
+    rc = _rbfm->scan(fh, columnsColumns(), "table-id", EQ_OP, &tableId, colAttrs, *rbfmScanIterator);
     rm_ScanIterator.rbfmScanIterator = rbfmScanIterator;
     if(rc != 0) return -1;
     
