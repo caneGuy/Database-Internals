@@ -545,22 +545,41 @@ uint16_t RecordBasedFileManager::makeRecord(const vector<Attribute> &recordDescr
 }
 
 RC RecordBasedFileManager::scan(FileHandle &fileHandle,
-                                const vector<Attribute> &recordDescriptor,
-                                const string &conditionAttribute,
-                                const CompOp compOp,                  // comparision type such as "<" and "="
-                                const void *value,                    // used in the comparison
-                                const vector<string> &attributeNames, // a list of projected attributes
-                                RBFM_ScanIterator &rbfm_ScanIterator) {
+    const vector<Attribute> &recordDescriptor,
+    const string &conditionAttribute,
+    const CompOp compOp,                  // comparision type such as "<" and "="
+    const void *value,                    // used in the comparison
+    const vector<string> &attributeNames, // a list of projected attributes
+    RBFM_ScanIterator &rbfm_ScanIterator) {
     
     rbfm_ScanIterator.fh = fileHandle;
     rbfm_ScanIterator.recordDescriptor = recordDescriptor;
     rbfm_ScanIterator.compOp = compOp;
     rbfm_ScanIterator.value = (void*) value;
-    rbfm_ScanIterator.attributeNames = attributeNames;
-    rbfm_ScanIterator.curr_page = 0;
-    rbfm_ScanIterator.curr_slot = 1;
-    rbfm_ScanIterator.page = NULL;
+    rbfm_ScanIterator.curr_page = -1;
+    rbfm_ScanIterator.curr_slot = 0;
+    rbfm_ScanIterator.page = (char*)malloc(PAGE_SIZE); ;
+    rbfm_ScanIterator.attributeNamesCount = attributeNames.size();
     
+    unordered_set<uint16_t> index;
+    for (uint16_t i = 0; i < recordDescriptor.size(); ++i) {
+        for (uint16_t j = 0; j < attributeNames.size(); ++j) {
+            if (attributeNames[j] == recordDescriptor[i].name) {
+                index.insert(i);
+                break;
+            }            
+        }
+    }
+    
+    rbfm_ScanIterator.index = index;
+    
+    for (uint16_t i = 0; i < recordDescriptor.size(); ++i) {
+        if (conditionAttribute == recordDescriptor[i].name) {
+            rbfm_ScanIterator.conditionAttributeIndex = i;
+        }
+    }
+    
+    // rbfm_ScanIterator.max_pages = fileHandle.getNumberOfPages();
     return 0;    
     
 }
@@ -568,24 +587,118 @@ RC RecordBasedFileManager::scan(FileHandle &fileHandle,
 
 RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) { 
     
-    rid.slotNum = curr_slot;
-    rid.pageNum = curr_page;
-    
-    // check if done with this one
-    if (page == NULL || max_slots < curr_slot) {
-        char *page = (char*)calloc(PAGE_SIZE, sizeof(char));       
-        if (fh.readPage(curr_page, page) != 0) return RBFM_EOF;
+    // check if done with this page or first time called
+    if (curr_page == -1 || max_slots == curr_slot) {
         curr_page++;
-    }
-       
-    RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
-    if (rbfm->readRecord(fh, recordDescriptor, rid, data) != 0) return -1;
+        if (fh.readPage(curr_page, page) != 0) return RBFM_EOF;        
+        memcpy(&max_slots, &page[PAGE_SIZE - 4], sizeof(uint16_t));
+        curr_slot = 0;
+    } 
     
-    curr_slot++;
+    int failed = 0;   
+    
+    do {
+        curr_slot++;
+        uint16_t record;
+        memcpy(&record, &page[PAGE_SIZE - 4 - 4 * curr_slot], sizeof(uint16_t));    
+        
+        
+        uint16_t fieldCount;
+        memcpy(&fieldCount, &page[record], sizeof(int16_t));
+        if (fieldCount != recordDescriptor.size()) return -1;
+
+        uint16_t long_nullvec = ceil(fieldCount / 8.0);  
+        uint16_t short_nullvec = ceil(attributeNamesCount/8.0);
+        
+        char* null_indicator = (char*)malloc(short_nullvec);
+        uint16_t null_indicator_count = 0;
+        
+        // for (uint16_t i=0; i < fieldCount; ++i) {
+            // if (index.count(i)){
+                // char target = page[record + sizeof(uint16_t) + i/8];
+                // if (target & (1<<(7-i%8)))
+                    // *null_indicator |=   1 << null_indicator_count;
+                // else
+                    // *null_indicator &= ~(1 << null_indicator_count);
+                // null_indicator_count++;           nullvec     
+            // }
+        // }
+        
+        uint16_t directory = record + sizeof(uint16_t) + long_nullvec;
+        
+        uint16_t offset = sizeof(uint16_t) + long_nullvec + fieldCount * sizeof(uint16_t);
+        uint16_t prev_offset = offset;
+        char *data_c = (char*)data + short_nullvec;
+        
+        for(uint16_t i = 0; i < fieldCount; ++i) {
+            
+            // get new offset in to data from dir
+            memcpy(&offset, &page[directory + i * sizeof(uint16_t)], sizeof(uint16_t));
+            
+            if (i == conditionAttributeIndex) {                
+                if (compOp != NO_OP) {                
+                    char target = page[record + sizeof(uint16_t) + i/8];
+                    if (target & (1<<(7-i%8))) {                        
+                        failed = 1;
+                    } else {
+                        if (recordDescriptor[i].type == TypeVarChar) {
+                            int attlen = offset - prev_offset;
+                            string val = string(&page[record + prev_offset], attlen);  
+                            failed = vc_comp(val);
+                                                        
+                            cout << "database value: " << val << endl;
+                            cout << "search value: " << (char*)value << endl;
+                            
+                        } else if (recordDescriptor[i].type == TypeInt) {
+                            int val;
+                            memcpy(&val, &page[record + prev_offset], sizeof(int));
+                            failed = int_comp(val);
+                        } else {
+                            float val;
+                            memcpy(&val, &page[record + prev_offset], sizeof(float));
+                            failed = float_comp(val);
+                        }
+                    }
+                } else {
+                    failed = 0;
+                }  
+                cout << "Condition on: " << recordDescriptor[i].name << endl;
+                cout << "failed: " << failed << endl;            
+            }
+            
+            // if this field is in the map (-> in the vector<string>)
+            if (index.count(i)) {            
+                char target = page[record + sizeof(uint16_t) + i/8];
+                if (!(target & (1<<(7-i%8)))) {
+                    if (recordDescriptor[i].type == TypeVarChar) {
+                        int attlen = offset - prev_offset;
+                        memcpy(&data_c[0], &attlen, sizeof(int));
+                        memcpy(&data_c[4], &page[record + prev_offset], attlen);
+                        data_c += (4 + attlen);                
+                    } else {
+                        memcpy(&data_c[0], &page[record + prev_offset], sizeof(int));
+                        data_c += sizeof(int); 
+                    }
+                    // not null so set it to 0
+                    null_indicator[null_indicator_count/8] &= ~(1 << (7 - null_indicator_count%8));
+                } else {  
+                    // is null so set it to 1
+                    null_indicator[null_indicator_count/8] |=  (1 << (7 - null_indicator_count%8));
+                }
+                null_indicator_count++;  
+            }
+            prev_offset = offset;
+        } 
+        
+        memcpy(data, null_indicator, short_nullvec);           
+        
+    } while (failed != 0);  
+    
+    rid.slotNum = curr_slot-1;
+    rid.pageNum = curr_page-1;
 
     return 0;
 }
-
 
 RC RBFM_ScanIterator::close() { 
     RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
@@ -593,6 +706,46 @@ RC RBFM_ScanIterator::close() {
     free(value);
     free(page);
     return 0; 
+}
+
+uint16_t RBFM_ScanIterator::float_comp(float val) {
+    float val2 = *(float*)value;
+    switch (compOp) {
+        case EQ_OP: return val2 == val;
+        case LT_OP: return val2 <  val; 
+        case GT_OP: return val2 >  val; 
+        case LE_OP: return val2 <= val; 
+        case GE_OP: return val2 >= val; 
+        case NE_OP: return val2 != val;  
+        default: return 0;
+    }
+}
+
+uint16_t RBFM_ScanIterator::int_comp(int val) {
+    int val2 = *(int*)value;
+    switch (compOp) {
+        case EQ_OP: return val2 == val;
+        case LT_OP: return val2 <  val; 
+        case GT_OP: return val2 >  val; 
+        case LE_OP: return val2 <= val; 
+        case GE_OP: return val2 >= val; 
+        case NE_OP: return val2 != val;  
+        default: return 0;
+    }
+}
+
+uint16_t RBFM_ScanIterator::vc_comp(string val) {
+    string val2 = (char*)(value);
+    int cmp = strcmp(val2.c_str(), val.c_str());
+    switch (compOp) {
+        case EQ_OP: return cmp == 0;
+        case LT_OP: return cmp <  0; 
+        case GT_OP: return cmp >  0; 
+        case LE_OP: return cmp <= 0; 
+        case GE_OP: return cmp >= 0; 
+        case NE_OP: return cmp != 0;  
+        default: return 0;
+    }
 }
 
 
