@@ -114,11 +114,12 @@ RC RelationManager::deleteTable(const string &tableName)
     if(rc != 0) return -1;
 
     cout << "Opened tables.tbl" << endl;
+    cout << "Delete table: " << tableName << endl;
 
     RM_ScanIterator rmsi;
     const vector<string> tableAttrs ({"table-id"});
 
-    rc = scan("tables", "table-name", EQ_OP, (void *)&tableName, tableAttrs, rmsi);
+    rc = scan("tables", "table-name", EQ_OP, (tableName.c_str()), tableAttrs, rmsi);
     cout << "Scan result: " << rc << endl;
     if(rc != 0) return -1;
     
@@ -126,7 +127,7 @@ RC RelationManager::deleteTable(const string &tableName)
     void *returnedData = malloc(PAGE_SIZE);
 
     if(rmsi.getNextTuple(rid, returnedData) == RM_EOF) return -1;
- 
+
     int tableId;
     memcpy(&tableId, (char *)returnedData + 1, sizeof(int));
     cout << "Table: (" << tableName << ", " << tableId << ")"  << endl;
@@ -302,9 +303,20 @@ RC RelationManager::scan(const string &tableName,
 	if(rc != 0) return -1;
 
     cout << "In scan, opened tables.tbl" << endl;
+    cout << "scanning for table: " << tableName << endl;
+    cout << "scan value: " << (char *) value << endl;
 
-	const vector<string> tblAttrs ({"table-id"});
-	rc = _rbfm->scan(fh, tablesColumns(), "table-name", EQ_OP, (void *)&tableName, tblAttrs, *rbfmScanIterator);
+    //std::string *sp = reinterpret_cast<const string*>(value);
+    //cout << "value cast: " << sp << endl;
+   cout << "Inserted start" << endl; 
+   const char* p = reinterpret_cast< const char *>(value);
+   for ( unsigned int i = 0; i < 25; i++ ) {
+        cout << hex  << int(p[i]) << " ";
+   }
+   cout << endl << "Inserted end" << endl;
+
+	const vector<string> tblAttrs ({"table-id", "table-name", "file-name", "privileged"});
+	rc = _rbfm->scan(fh, tablesColumns(), "table-name", EQ_OP, value, tblAttrs, *rbfmScanIterator);
     rm_ScanIterator.rbfmScanIterator = rbfmScanIterator; 
 	cout << "RBFM scan: " << rc << endl;
     if(rc != 0) return -1;
@@ -320,7 +332,8 @@ RC RelationManager::scan(const string &tableName,
 	unordered_set<string> sysColumns;
 	cout << "Right before RM_SI get next tuple" << endl;
     if(rm_ScanIterator.getNextTuple(rid, returnedData) == RM_EOF) return -1;
-
+    printTuple(tablesColumns(), returnedData);
+    
     int tableId;
     memcpy(&tableId, (char *)returnedData + 1, sizeof(int));
     cout << "Table: (" << tableName << ", " << tableId << ")"  << endl;
@@ -339,6 +352,8 @@ RC RelationManager::scan(const string &tableName,
     vector<Attribute> recordDescriptor;
     while(rm_ScanIterator.getNextTuple(rid, returnedData) != RM_EOF) {
         int offset = 1;
+
+        printTuple(columnsColumns(), returnedData);
         
         int len;
         memcpy(&len, (char *)returnedData + offset, sizeof(int));
