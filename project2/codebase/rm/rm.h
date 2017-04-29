@@ -19,8 +19,8 @@ using namespace std;
 class RM_ScanIterator {
 friend class RelationManager;
 public:
-  RM_ScanIterator() {};
-  ~RM_ScanIterator() {};
+  RM_ScanIterator();
+  ~RM_ScanIterator();
 
   // "data" follows the same format as RelationManager::insertTuple()
   RC getNextTuple(RID &rid, void *data);

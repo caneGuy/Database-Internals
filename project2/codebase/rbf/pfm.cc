@@ -49,12 +49,15 @@ RC PagedFileManager::destroyFile(const string &fileName)
 RC PagedFileManager::openFile(const string &fileName, FileHandle &fileHandle)
 {
     if(fileHandle.openedFile != NULL) return -1;
+    // cout <<"fileHandle was not null" << endl;
     
     struct stat fileInfo;
     if(stat(fileName.c_str(), &fileInfo) != 0) return -1;
+    // cout <<"fileinfo extists" << endl;
     
     fileHandle.openedFile = fopen(fileName.c_str(), "rb+");
     if(fileHandle.openedFile == NULL) return -1;
+    // cout <<"file opened successfully" << endl;
     
     fileHandle.fileSize = fileInfo.st_size;
  

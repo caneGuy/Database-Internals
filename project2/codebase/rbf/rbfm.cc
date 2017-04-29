@@ -218,6 +218,9 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
     }
     
     if (record_offset < 0) {
+        
+        //// PROBLEM WITH DELETED
+        
         cout << "DELETE: This record was moved to a different page!" << endl;
         cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
         
@@ -593,6 +596,7 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
         
         // check if done with this page or first time called
         if (curr_page == -1 || max_slots == curr_slot) {
+            // cout << "curr page " << curr_page << " curr slot " << curr_slot << " max_slots: " << max_slots << endl;
             curr_page++;
             if (fh.readPage(curr_page, page) != 0) return RBFM_EOF;        
             memcpy(&max_slots, &page[PAGE_SIZE - 4], sizeof(uint16_t));
@@ -600,12 +604,24 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
         } 
         
         curr_slot++;
-        uint16_t record;
-        memcpy(&record, &page[PAGE_SIZE - 4 - 4 * curr_slot], sizeof(uint16_t));         
+        int16_t record;
+        memcpy(&record, &page[PAGE_SIZE - 4 - 4 * curr_slot], sizeof(int16_t));  
+        if (record == deleted_entry) {
+            // cout << "This entry was deleted" << endl;
+            // cout << "Old RID: " << curr_page << "." << curr_slot << endl;
+            // cout << "record offset: " << record << endl;
+            failed = 1;
+            continue;
+        }
         
         uint16_t fieldCount;
         memcpy(&fieldCount, &page[record], sizeof(int16_t));
-        if (fieldCount != recordDescriptor.size()) return -1;
+        if (fieldCount != recordDescriptor.size()) {
+            // cout << "curr rid : " << curr_page << '.' << curr_slot << endl;
+            // cout << "record offset: " << record << endl;
+            // cout << "bad RecordDescripot.size: " <<  recordDescriptor.size() << " field count " << fieldCount << endl;
+            return -1;
+        }
 
         uint16_t long_nullvec = ceil(fieldCount / 8.0);  
         uint16_t short_nullvec = ceil(attributeNamesCount/8.0);
@@ -636,12 +652,14 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
                             failed = !vc_comp(val);
                                                         
                             // cout << "database value: " << val << endl;
-                            // cout << "search value: " << (char*)value << endl;
+                             // cout << "search value: " << (char*)value << endl;
                             
                         } else if (recordDescriptor[i].type == TypeInt) {
                             int val;
                             memcpy(&val, &page[record + prev_offset], sizeof(int));
                             failed = int_comp(val);
+                            // cout << "database value: " << val << endl;
+                             // cout << "search value: " << *(int*)value << endl;
                         } else {
                             float val;
                             memcpy(&val, &page[record + prev_offset], sizeof(float));

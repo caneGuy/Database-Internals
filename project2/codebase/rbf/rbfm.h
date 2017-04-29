@@ -12,7 +12,7 @@
 
 using namespace std;
 
-const int16_t deleted_entry = 0x80;
+const int16_t deleted_entry = 0x8000;
 
 // Record ID
 typedef struct
@@ -63,7 +63,7 @@ The scan iterator is NOT required to be implemented for the part 1 of the projec
 class RBFM_ScanIterator {
 friend class RecordBasedFileManager;
 public:
-  RBFM_ScanIterator() {};
+  RBFM_ScanIterator() { };
   ~RBFM_ScanIterator() {};
 
   // Never keep the results in the memory. When getNextRecord() is called, 
