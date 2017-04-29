@@ -26,7 +26,7 @@ public:
   RC getNextTuple(RID &rid, void *data);
   RC close();
 private:
-  RBFM_ScanIterator rbfmScanIterator;
+  RBFM_ScanIterator *rbfmScanIterator;
 };
 
 

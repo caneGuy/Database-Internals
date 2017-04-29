@@ -2,7 +2,7 @@
 #include "rm.h"
 
 RC RM_ScanIterator::getNextTuple(RID &rid, void *data) {
-    int rc = rbfmScanIterator.getNextRecord(rid, data);
+    int rc = rbfmScanIterator->getNextRecord(rid, data);
     cout << "getNextRecord: " << rc << endl;
     if(rc != 0) return RM_EOF;
 
@@ -10,8 +10,8 @@ RC RM_ScanIterator::getNextTuple(RID &rid, void *data) {
 }
 
 RC RM_ScanIterator::close() {
-   rbfmScanIterator.close();
-   delete &rbfmScanIterator;
+   rbfmScanIterator->close();
+   delete rbfmScanIterator;
 
    return 0;
 }
@@ -295,16 +295,16 @@ RC RelationManager::scan(const string &tableName,
 
     // setup iterator for tables table (and then columns table with that id)
      
-    RBFM_ScanIterator rbfmScanIterator;
- 
-	FileHandle fh;
+    RBFM_ScanIterator *rbfmScanIterator = new RBFM_ScanIterator();
+    
+    FileHandle fh;
 	int rc = _rbfm->openFile("tables.tbl", fh);
 	if(rc != 0) return -1;
 
     cout << "In scan, opened tables.tbl" << endl;
 
 	const vector<string> tblAttrs ({"table-id"});
-	rc = _rbfm->scan(fh, tablesColumns(), "table-name", EQ_OP, (void *)&tableName, tblAttrs, rbfmScanIterator);
+	rc = _rbfm->scan(fh, tablesColumns(), "table-name", EQ_OP, (void *)&tableName, tblAttrs, *rbfmScanIterator);
     rm_ScanIterator.rbfmScanIterator = rbfmScanIterator; 
 	cout << "RBFM scan: " << rc << endl;
     if(rc != 0) return -1;
@@ -321,13 +321,57 @@ RC RelationManager::scan(const string &tableName,
 	cout << "Right before RM_SI get next tuple" << endl;
     if(rm_ScanIterator.getNextTuple(rid, returnedData) == RM_EOF) return -1;
 
-    vector<Attribute> recordDescriptor;
-    getAttributes(tableName, recordDescriptor);
+    int tableId;
+    memcpy(&tableId, (char *)returnedData + 1, sizeof(int));
+    cout << "Table: (" << tableName << ", " << tableId << ")"  << endl;
 
-    rc = _rbfm->scan(fh, recordDescriptor, tableName, compOp, value, attributeNames, rbfmScanIterator);
-    rm_ScanIterator.rbfmScanIterator = rbfmScanIterator; 
+    rc = _rbfm->closeFile(fh);
+    if(rc != 0) return -1;
+
+    rc = _rbfm->openFile("columns.tbl", fh);
+    if(rc != 0) return -1;
+
+    const vector<string> colAttrs ({"column-name", "column-type", "column-length"});
+    rc = _rbfm->scan(fh, columnsColumns(), "table-id", EQ_OP, (void *)&tableId, colAttrs, *rbfmScanIterator);
+    rm_ScanIterator.rbfmScanIterator = rbfmScanIterator;
     if(rc != 0) return -1;
     
+    vector<Attribute> recordDescriptor;
+    while(rm_ScanIterator.getNextTuple(rid, returnedData) != RM_EOF) {
+        int offset = 1;
+        
+        int len;
+        memcpy(&len, (char *)returnedData + offset, sizeof(int));
+        offset += sizeof(int);
+
+        string tmp;
+        tmp.assign((char *)returnedData +  offset, (char *)returnedData + offset + len);
+        cout << "Column: " << tmp << endl;
+        offset += len;
+        
+        int type;
+        memcpy(&type, (char *)returnedData + offset, sizeof(int));
+        offset += sizeof(int);
+        
+        int length;
+        memcpy(&length, (char *)returnedData + offset, sizeof(int));
+       
+        Attribute attr;
+        attr.name = tmp;
+        attr.type = (AttrType)type;
+        attr.length = (AttrLength)length;
+        recordDescriptor.push_back(attr); 
+    }
+
+    rc = _rbfm->closeFile(fh);
+    if(rc != 0) return -1;
+    
+    rc = _rbfm->openFile(tableName + ".tbl", fh);
+    if(rc != 0) return -1;
+    
+    rc = _rbfm->scan(fh, recordDescriptor, tableName, compOp, value, attributeNames, *rbfmScanIterator);
+    rm_ScanIterator.rbfmScanIterator = rbfmScanIterator; 
+    if(rc != 0) return -1;
     
     
     /*int offset = 1;
