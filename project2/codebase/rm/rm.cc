@@ -79,6 +79,7 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
 
    int maxId = getMaxTableId() + 1;
    rc = insertTableRecord(fh, maxId, tableName, tableName + ".tbl", TBL_USER);
+   cout << "Creating table: " << tableName << " with ID: " << maxId << endl;
    cout << "Insert table rec (crateTable) " << rc << endl;
    if(rc != 0) return -1;
  
@@ -119,25 +120,29 @@ RC RelationManager::deleteTable(const string &tableName)
     RM_ScanIterator rmsi;
     const vector<string> tableAttrs ({"table-id"});
 
-    rc = scan("tables", "table-name", EQ_OP, (tableName.c_str()), tableAttrs, rmsi);
+    rc = scan("tables", "table-name", EQ_OP, tableName.c_str(), tableAttrs, rmsi);
     cout << "Scan result: " << rc << endl;
     if(rc != 0) return -1;
     
     RID rid;
     void *returnedData = malloc(PAGE_SIZE);
 
-    if(rmsi.getNextTuple(rid, returnedData) == RM_EOF) return -1;
+    RM_ScanIterator test;
+    rc = scan("tables", "table-name", EQ_OP, tableName.c_str(), tableAttrs, test);
+    cout << "FUCK" << endl;
+    if(test.getNextTuple(rid, returnedData) == RM_EOF) return -1;
 
     int tableId;
     memcpy(&tableId, (char *)returnedData + 1, sizeof(int));
-    cout << "Table: (" << tableName << ", " << tableId << ")"  << endl;
+    cout << "wow Table: (" << tableName << ", " << tableId << ")"  << endl;
 
     if(deleteTuple("tables", rid) != 0) return -1;
-    
-    const vector<string> colAttrs;
+    cout << "After deleting the rid of table" << endl;   
+ 
+    const vector<string> colAttrs ({"column-name"});
     rc = scan("columns", "table-id", EQ_OP, (void *)&tableId, colAttrs, rmsi);
     if(rc != 0) return -1;
-    
+
     while(rmsi.getNextTuple(rid, returnedData) != RM_EOF) {
         if(deleteTuple("columns", rid) != 0) return -1;
     }
@@ -306,8 +311,6 @@ RC RelationManager::scan(const string &tableName,
     cout << "scanning for table: " << tableName << endl;
     cout << "scan value: " << (char *) value << endl;
 
-
-
 	const vector<string> tblAttrs ({"table-id", "table-name", "file-name", "privileged"});
 	rc = _rbfm->scan(fh, tablesColumns(), "table-name", EQ_OP, value, tblAttrs, *rbfmScanIterator);
     rm_ScanIterator.rbfmScanIterator = rbfmScanIterator; 
@@ -325,7 +328,8 @@ RC RelationManager::scan(const string &tableName,
 	unordered_set<string> sysColumns;
 	cout << "Right before RM_SI get next tuple" << endl;
     if(rm_ScanIterator.getNextTuple(rid, returnedData) == RM_EOF) return -1;
-    printTuple(tablesColumns(), returnedData);
+    cout << "BEFORE_PRINT TUPLE " << endl;
+     printTuple(tablesColumns(), returnedData);
     
     int tableId;
     memcpy(&tableId, (char *)returnedData + 1, sizeof(int));
@@ -337,16 +341,20 @@ RC RelationManager::scan(const string &tableName,
     rc = _rbfm->openFile("columns.tbl", fh);
     if(rc != 0) return -1;
 
-    const vector<string> colAttrs ({"table-id", "column-name", "column-type", "column-length", "column-position"});
+    const vector<string> colAttrs ({"column-name", "column-type", "column-length"});
     rc = _rbfm->scan(fh, columnsColumns(), "table-id", EQ_OP, &tableId, colAttrs, *rbfmScanIterator);
     rm_ScanIterator.rbfmScanIterator = rbfmScanIterator;
     if(rc != 0) return -1;
-    
+
+    vector<Attribute> descriptor = columnsColumns();
+    descriptor.erase(descriptor.begin());
+    descriptor.erase(descriptor.end() - 1);   
+ 
     vector<Attribute> recordDescriptor;
     while(rm_ScanIterator.getNextTuple(rid, returnedData) != RM_EOF) {
         int offset = 1;
 
-        printTuple(columnsColumns(), returnedData);
+        printTuple(descriptor, returnedData);
         
         int len;
         memcpy(&len, (char *)returnedData + offset, sizeof(int));
@@ -354,7 +362,7 @@ RC RelationManager::scan(const string &tableName,
 
         string tmp;
         tmp.assign((char *)returnedData +  offset, (char *)returnedData + offset + len);
-        cout << "Column: " << tmp << endl;
+        cout << "Column test: " << tmp << endl;
         offset += len;
         
         int type;
@@ -369,19 +377,32 @@ RC RelationManager::scan(const string &tableName,
         attr.type = (AttrType)type;
         attr.length = (AttrLength)length;
         recordDescriptor.push_back(attr); 
+        cout << "REC DESC: " << attr.name << " " << attr.type << " " << attr.length << endl;
+    }
+
+    cout << "Final rec descriptor: " << endl;
+    for(int i = 0; i < recordDescriptor.size(); ++ i) {
+        Attribute attr = recordDescriptor.at(i);
+        cout << i << " " << attr.name << " " << attr.type << " " << attr.length << endl;
     }
 
     rc = _rbfm->closeFile(fh);
     if(rc != 0) return -1;
-    
+   
+    cout << "Openeing file table: " << tableName << endl; 
     rc = _rbfm->openFile(tableName + ".tbl", fh);
     if(rc != 0) return -1;
+  
+    cout << "Setup RD... " << endl;
+    cout << " condAttr: " << conditionAttribute << endl;
+    cout << "where it equals: " << (char*) value << endl; 
     
-    rc = _rbfm->scan(fh, recordDescriptor, tableName, compOp, value, attributeNames, *rbfmScanIterator);
+    rc = _rbfm->scan(fh, recordDescriptor, conditionAttribute, compOp, value, attributeNames, *rbfmScanIterator);
     rm_ScanIterator.rbfmScanIterator = rbfmScanIterator; 
     if(rc != 0) return -1;
     
-    
+    // compare attribute names and conditionattribute to recorddescriptor names   
+ 
     /*int offset = 1;
     int tableId;
     memcpy(&tableId, (char *)returnedData + offset, sizeof(int));
@@ -537,10 +558,10 @@ RC RelationManager::insertColumnRecords() {
    rc = insertColumnRecord(fh, 2, "column-type", TypeInt, 4, 3);
    if(rc != 0) return -1;
    
-   rc = insertColumnRecord(fh, 1, "column-length", TypeInt, 4, 3);
+   rc = insertColumnRecord(fh, 2, "column-length", TypeInt, 4, 3);
    if(rc != 0) return -1;
    
-   rc = insertColumnRecord(fh, 1, "column-position", TypeInt, 4, 4);
+   rc = insertColumnRecord(fh, 2, "column-position", TypeInt, 4, 4);
    if(rc != 0) return -1;
 
    rc = _rbfm->closeFile(fh);

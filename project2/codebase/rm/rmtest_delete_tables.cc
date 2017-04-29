@@ -11,7 +11,7 @@ int main()
 	  cout << "Deleting tbl_employee failed." << endl;
   }
 
-  rc = rm->deleteTable("tbl_employee2");
+ /* rc = rm->deleteTable("tbl_employee2");
   if (rc != 0) {
 	  cout << "Deleting tbl_employee2 failed." << endl;
   }
@@ -31,6 +31,6 @@ int main()
 	  cout << "Deleting the catalog failed." << endl;
 	  return rc;
   }
-
+*/
   return success;
 }
