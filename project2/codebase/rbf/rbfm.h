@@ -6,6 +6,7 @@
 #include <climits>
 #include <iostream>
 #include <cstring>
+#include <unordered_set>
 
 #include "../rbf/pfm.h"
 
@@ -73,15 +74,19 @@ public:
 private:
   FileHandle fh;
   vector<Attribute> recordDescriptor;
-  string conditionAttribute;
+  uint16_t conditionAttributeIndex;
   CompOp compOp;
   void *value;
-  vector<string> attributeNames;  
-  void *page;
-  uint16_t curr_page;
-  uint16_t curr_slot;
-  uint16_t max_pages;
+  unordered_set<uint16_t> index;  
+  char *page;
+  int curr_page; // more like next page
+  uint16_t curr_slot; // more like last slot
+  // uint16_t max_pages;
   uint16_t max_slots;
+  uint16_t attributeNamesCount;
+  uint16_t vc_comp(string val);
+  uint16_t int_comp(int val);
+  uint16_t float_comp(float val);
 };
 
 
