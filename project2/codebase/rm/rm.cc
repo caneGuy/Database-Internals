@@ -110,10 +110,6 @@ RC RelationManager::deleteTable(const string &tableName)
     int rc = _rbfm->destroyFile(tableName + ".tbl");
     if(rc != 0) return -1;
 
-    //rc = _rbfm->closeFile(fh);
-    //cout << "Close file: " << rc << endl;
-    //if(rc != 0) return -1;
-    
     rc = _rbfm->openFile("tables.tbl", fh);
     if(rc != 0) return -1;
 
@@ -125,7 +121,6 @@ RC RelationManager::deleteTable(const string &tableName)
     rc = scan("tables", "table-name", EQ_OP, (void *)&tableName, tableAttrs, rmsi);
     cout << "Scan result: " << rc << endl;
     if(rc != 0) return -1;
-
     
     RID rid;
     void *returnedData = malloc(PAGE_SIZE);
@@ -135,43 +130,157 @@ RC RelationManager::deleteTable(const string &tableName)
     int tableId;
     memcpy(&tableId, (char *)returnedData + 1, sizeof(int));
     cout << "Table: (" << tableName << ", " << tableId << ")"  << endl;
-        
-    return -1;
+
+    if(deleteTuple("tables", rid) != 0) return -1;
+    
+    const vector<string> colAttrs;
+    rc = scan("columns", "table-id", EQ_OP, (void *)&tableId, colAttrs, rmsi);
+    if(rc != 0) return -1;
+    
+    while(rmsi.getNextTuple(rid, returnedData) != RM_EOF) {
+        if(deleteTuple("columns", rid) != 0) return -1;
+    }
+            
+    return 0;
 }
 
 RC RelationManager::getAttributes(const string &tableName, vector<Attribute> &attrs)
 {
-    return -1;
+    FileHandle fh;
+    int rc = _rbfm->openFile("tables.tbl", fh);
+    if(rc != 0) return -1;
+    
+    RM_ScanIterator rmsi;
+    const vector<string> tableAttrs ({"table-id"});
+    
+    rc = scan("tables", "table-name", EQ_OP, (void *)&tableName, tableAttrs, rmsi);
+    if(rc != 0) return -1;
+    
+    RID rid;
+    void *returnedData = malloc(PAGE_SIZE);
+
+    if(rmsi.getNextTuple(rid, returnedData) == RM_EOF) return -1;
+ 
+    int tableId;
+    memcpy(&tableId, (char *)returnedData + 1, sizeof(int));
+    cout << "Table: (" << tableName << ", " << tableId << ")"  << endl;
+   
+    const vector<string> colAttrs ({"column-name", "column-type", "column-length"});
+   
+    rc = scan("columns", "table-id", EQ_OP, (void *)&tableId, colAttrs, rmsi);
+    if(rc != 0) return -1;
+    
+    while(rmsi.getNextTuple(rid, returnedData) != RM_EOF) {
+        int offset = 1;
+        
+        int len;
+        memcpy(&len, (char *)returnedData + offset, sizeof(int));
+        offset += sizeof(int);
+
+        string tmp;
+        tmp.assign((char *)returnedData +  offset, (char *)returnedData + offset + len);
+        cout << "Column: " << tmp << endl;
+        offset += len;
+        
+        int type;
+        memcpy(&type, (char *)returnedData + offset, sizeof(int));
+        offset += sizeof(int);
+        
+        int length;
+        memcpy(&length, (char *)returnedData + offset, sizeof(int));
+       
+        Attribute attr;
+        attr.name = tmp;
+        attr.type = (AttrType)type;
+        attr.length = (AttrLength)length;
+        attrs.push_back(attr); 
+    }
+
+    return 0;
 }
 
 RC RelationManager::insertTuple(const string &tableName, const void *data, RID &rid)
 {
-    return -1;
+    FileHandle fh;
+    int rc = _rbfm->openFile(tableName + ".tbl", fh);
+    if(rc != 0) return -1;
+   
+    vector<Attribute> attrs;
+    getAttributes(tableName, attrs);
+ 
+    rc = _rbfm->insertRecord(fh, attrs,  data, rid);
+    if(rc != 0) return -1;
+    
+    return 0;
 }
 
 RC RelationManager::deleteTuple(const string &tableName, const RID &rid)
 {
-    return -1;
+    FileHandle fh;
+    int rc = _rbfm->openFile(tableName + ".tbl", fh);
+    if(rc != 0) return -1;
+    
+    vector<Attribute> attrs;
+    getAttributes(tableName, attrs);
+    
+    rc = _rbfm->deleteRecord(fh, attrs, rid);
+    if(rc != 0) return -1;
+  
+    return 0;
 }
 
 RC RelationManager::updateTuple(const string &tableName, const void *data, const RID &rid)
 {
-    return -1;
+    FileHandle fh;
+    int rc = _rbfm->openFile(tableName + ".tbl", fh);
+    if(rc != 0) return -1;
+    
+    vector<Attribute> attrs;
+    getAttributes(tableName, attrs);
+    
+    rc = _rbfm->updateRecord(fh, attrs, data, rid);
+    if(rc != 0) return -1;
+  
+    return 0;
 }
 
 RC RelationManager::readTuple(const string &tableName, const RID &rid, void *data)
 {
-    return -1;
+    FileHandle fh;
+    int rc = _rbfm->openFile(tableName + ".tbl", fh);
+    if(rc != 0) return -1;
+    
+    vector<Attribute> attrs;
+    getAttributes(tableName, attrs);
+    
+    rc = _rbfm->readRecord(fh, attrs, rid, data);
+    if(rc != 0) return -1;
+  
+    return 0;
 }
 
 RC RelationManager::printTuple(const vector<Attribute> &attrs, const void *data)
 {
-	return -1;
+	int rc = _rbfm->printRecord(attrs, data);
+    if(rc != 0) return -1;
+    
+    return 0;
 }
 
 RC RelationManager::readAttribute(const string &tableName, const RID &rid, const string &attributeName, void *data)
 {
-    return -1;
+    FileHandle fh;
+    int rc = _rbfm->openFile(tableName + ".tbl", fh);
+    if(rc != 0) return -1;
+   
+     
+    vector<Attribute> attrs;
+    getAttributes(tableName, attrs);
+    
+    rc = _rbfm->readAttribute(fh, attrs, rid, attributeName, data);
+    if(rc != 0) return -1;
+
+    return 0;
 }
 
 RC RelationManager::scan(const string &tableName,
@@ -212,7 +321,20 @@ RC RelationManager::scan(const string &tableName,
 	cout << "Right before RM_SI get next tuple" << endl;
     if(rm_ScanIterator.getNextTuple(rid, returnedData) == RM_EOF) return -1;
 
-    cout << "After EOF getnextTuple" << endl;
+    vector<Attribute> recordDescriptor;
+    getAttributes(tableName, recordDescriptor);
+
+    rc = _rbfm->scan(fh, recordDescriptor, tableName, compOp, value, attributeNames, rbfmScanIterator);
+    if(rc != 0) return -1;
+    
+    
+    
+    /*int offset = 1;
+    int tableId;
+    memcpy(&tableId, (char *)returnedData + offset, sizeof(int));
+    */
+
+    /*cout << "After EOF getnextTuple" << endl;
 	int offset = 1;
 	char *ptr = (char *)returnedData;
 
@@ -224,7 +346,7 @@ RC RelationManager::scan(const string &tableName,
 	tmp.assign(ptr[offset], ptr[offset] + len);
 	cout << "Column: " << tmp << endl;
 
-	sysColumns.insert(tmp);
+	sysColumns.insert(tmp);*/
     // null byte, var-char length (4), value
     
     /*FileHandle fh;
