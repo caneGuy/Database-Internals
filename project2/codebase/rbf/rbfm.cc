@@ -308,7 +308,7 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
     
 }
 
-RC readAttribute(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, const string &attributeName, void *data){
+RC RecordBasedFileManager::readAttribute(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, const string &attributeName, void *data){
   
     char *page = (char*) calloc(PAGE_SIZE, sizeof(char));      
     
@@ -346,6 +346,15 @@ RC readAttribute(FileHandle &fileHandle, const vector<Attribute> &recordDescript
     uint16_t fieldCount;
     memcpy(&fieldCount, &page[record], sizeof(uint16_t));
     if (fieldCount != recordDescriptor.size()) return -1;
+    
+    
+    uint16_t index;
+    for (index = 0; index < recordDescriptor.size(); ++index) {
+        cout << recordDescriptor[index].name << endl;
+    }
+    
+    return 0;
+    
 
     uint16_t nullvec = ceil(fieldCount / 8.0);
     // memcpy(data, &page[record + sizeof(uint16_t)], nullvec);
@@ -374,10 +383,10 @@ RC readAttribute(FileHandle &fileHandle, const vector<Attribute> &recordDescript
     }
     free(page);
 
-    return 0;
-    
+    return 0;    
     
 }
+
 
 RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor, const void *data) {
     
@@ -533,6 +542,57 @@ uint16_t RecordBasedFileManager::makeRecord(const vector<Attribute> &recordDescr
     
     return data_offset;
     
+}
+
+RC RecordBasedFileManager::scan(FileHandle &fileHandle,
+                                const vector<Attribute> &recordDescriptor,
+                                const string &conditionAttribute,
+                                const CompOp compOp,                  // comparision type such as "<" and "="
+                                const void *value,                    // used in the comparison
+                                const vector<string> &attributeNames, // a list of projected attributes
+                                RBFM_ScanIterator &rbfm_ScanIterator) {
+    
+    rbfm_ScanIterator.fh = fileHandle;
+    rbfm_ScanIterator.recordDescriptor = recordDescriptor;
+    rbfm_ScanIterator.compOp = compOp;
+    rbfm_ScanIterator.value = (void*) value;
+    rbfm_ScanIterator.attributeNames = attributeNames;
+    rbfm_ScanIterator.curr_page = 0;
+    rbfm_ScanIterator.curr_slot = 1;
+    rbfm_ScanIterator.page = NULL;
+    
+    return 0;    
+    
+}
+
+
+RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) { 
+    
+    rid.slotNum = curr_slot;
+    rid.pageNum = curr_page;
+    
+    // check if done with this one
+    if (page == NULL || max_slots < curr_slot) {
+        char *page = (char*)calloc(PAGE_SIZE, sizeof(char));       
+        if (fh.readPage(curr_page, page) != 0) return RBFM_EOF;
+        curr_page++;
+    }
+       
+    RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
+    if (rbfm->readRecord(fh, recordDescriptor, rid, data) != 0) return -1;
+    
+    curr_slot++;
+
+    return 0;
+}
+
+
+RC RBFM_ScanIterator::close() { 
+    RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
+    rbfm->closeFile(fh);
+    free(value);
+    free(page);
+    return 0; 
 }
 
 

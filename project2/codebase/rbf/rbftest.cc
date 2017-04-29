@@ -784,6 +784,9 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
     }
     
     cout << endl;
+    
+    
+    rbfm->readAttribute(fileHandle, recordDescriptor, rid, "test", returnedData);
 
     // Close the file "test9"
     rc = rbfm->closeFile(fileHandle);
