@@ -2,11 +2,18 @@
 #include "rm.h"
 
 RC RM_ScanIterator::getNextTuple(RID &rid, void *data) {
-    return RM_EOF;
+    int rc = rbfmScanIterator.getNextRecord(rid, data);
+    cout << "getNextRecord: " << rc << endl;
+    if(rc != 0) return RM_EOF;
+
+    return 0;
 }
 
 RC RM_ScanIterator::close() {
-   return -1;
+   rbfmScanIterator.close();
+   delete &rbfmScanIterator;
+
+   return 0;
 }
 
 RelationManager* RelationManager::_rm = 0;
@@ -99,6 +106,36 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
 
 RC RelationManager::deleteTable(const string &tableName)
 {
+    FileHandle fh;
+    int rc = _rbfm->destroyFile(tableName + ".tbl");
+    if(rc != 0) return -1;
+
+    //rc = _rbfm->closeFile(fh);
+    //cout << "Close file: " << rc << endl;
+    //if(rc != 0) return -1;
+    
+    rc = _rbfm->openFile("tables.tbl", fh);
+    if(rc != 0) return -1;
+
+    cout << "Opened tables.tbl" << endl;
+
+    RM_ScanIterator rmsi;
+    const vector<string> tableAttrs ({"table-id"});
+
+    rc = scan("tables", "table-name", EQ_OP, (void *)&tableName, tableAttrs, rmsi);
+    cout << "Scan result: " << rc << endl;
+    if(rc != 0) return -1;
+
+    
+    RID rid;
+    void *returnedData = malloc(PAGE_SIZE);
+
+    if(rmsi.getNextTuple(rid, returnedData) == RM_EOF) return -1;
+ 
+    int tableId;
+    memcpy(&tableId, (char *)returnedData + 1, sizeof(int));
+    cout << "Table: (" << tableName << ", " << tableId << ")"  << endl;
+        
     return -1;
 }
 
@@ -151,39 +188,43 @@ RC RelationManager::scan(const string &tableName,
      
     RBFM_ScanIterator rbfmScanIterator;
     rm_ScanIterator.rbfmScanIterator = rbfmScanIterator; 
-    
-    FileHandle fh;
-    int rc = _rbfm->openFile("tables.tbl", fh);
-    if(rc != 0) return -1;
-    
-    const vector<string> tblAttrs ({"table-id"});
-    rc = _rbfm->scan(fh, tablesColumns(), "table-name", EQ_OP, (void *)&tableName, tblAttrs, rbfmScanIterator);
-    if(rc != 0) return -1;
-    
-    RID rid;
-    void *returnedData = malloc(PAGE_SIZE);
+ 
+	FileHandle fh;
+	int rc = _rbfm->openFile("tables.tbl", fh);
+	if(rc != 0) return -1;
 
-    unordered_set<string> givenColumns ({conditionAttribute});
-    for(unsigned int i = 0; i < attributeNames.size(); ++i) { 
-        givenColumns.insert(attributeNames.at(i));
-    }
-    
-    unordered_set<string> sysColumns; 
+    cout << "In scan, opened tables.tbl" << endl;
+
+	const vector<string> tblAttrs ({"table-id"});
+	rc = _rbfm->scan(fh, tablesColumns(), "table-name", EQ_OP, (void *)&tableName, tblAttrs, rbfmScanIterator);
+	cout << "RBFM scan: " << rc << endl;
+    if(rc != 0) return -1;
+
+	RID rid;
+	void *returnedData = malloc(PAGE_SIZE);
+
+	unordered_set<string> givenColumns ({conditionAttribute});
+	for(unsigned int i = 0; i < attributeNames.size(); ++i) { 
+	  givenColumns.insert(attributeNames.at(i));
+	}
+
+	unordered_set<string> sysColumns;
+	cout << "Right before RM_SI get next tuple" << endl;
     if(rm_ScanIterator.getNextTuple(rid, returnedData) == RM_EOF) return -1;
 
-    int offset = 1;
-    char *ptr = (char *)returnedData;
- 
-    int len;
-    memcpy(&len, ptr + 1, sizeof(int));
-    offset += sizeof(int);
-        
-    string tmp;
-    tmp.assign(ptr[offset], ptr[offset] + len);
-    cout << "Column: " << tmp << endl;
-        
-    sysColumns.insert(tmp);
-        
+    cout << "After EOF getnextTuple" << endl;
+	int offset = 1;
+	char *ptr = (char *)returnedData;
+
+	int len;
+	memcpy(&len, ptr + 1, sizeof(int));
+	offset += sizeof(int);
+
+	string tmp;
+	tmp.assign(ptr[offset], ptr[offset] + len);
+	cout << "Column: " << tmp << endl;
+
+	sysColumns.insert(tmp);
     // null byte, var-char length (4), value
     
     /*FileHandle fh;
@@ -417,14 +458,14 @@ RC RelationManager::insertTableRecord(FileHandle &fh, const int tableId, const s
    }
 
    // cout << "Inserted start" << endl; 
-   const char* p = reinterpret_cast< const char *>(record);
+   //const char* p = reinterpret_cast< const char *>(record);
    for ( unsigned int i = 0; i < size; i++ ) {
       // std::cout << hex << int(p[i]) << " ";
    }
    // cout << endl << "Inserted end" << endl;
 
    // cout << "Inserted start" << endl; 
-   p = reinterpret_cast< const char *>(returnedData);
+   //p = reinterpret_cast< const char *>(returnedData);
    for ( unsigned int i = 0; i < size; i++ ) {
       // std::cout << hex << int(p[i]) << " ";
    }
@@ -458,14 +499,14 @@ RC RelationManager::insertColumnRecord(FileHandle &fh, const int tableId, const 
    }
 
    // cout << "Inserted start" << endl; 
-   const char* p = reinterpret_cast< const char *>(record);
+   //const char* p = reinterpret_cast< const char *>(record);
    for ( unsigned int i = 0; i < size; i++ ) {
       // std::cout << hex << int(p[i]) << " ";
    }
    // cout << endl << "Inserted end" << endl;
 
    // cout << "Inserted start" << endl; 
-   p = reinterpret_cast< const char *>(returnedData);
+   //p = reinterpret_cast< const char *>(returnedData);
    for ( unsigned int i = 0; i < size; i++ ) {
       // std::cout << hex << int(p[i]) << " ";
    }
