@@ -296,7 +296,6 @@ RC RelationManager::scan(const string &tableName,
     // setup iterator for tables table (and then columns table with that id)
      
     RBFM_ScanIterator rbfmScanIterator;
-    rm_ScanIterator.rbfmScanIterator = rbfmScanIterator; 
  
 	FileHandle fh;
 	int rc = _rbfm->openFile("tables.tbl", fh);
@@ -306,6 +305,7 @@ RC RelationManager::scan(const string &tableName,
 
 	const vector<string> tblAttrs ({"table-id"});
 	rc = _rbfm->scan(fh, tablesColumns(), "table-name", EQ_OP, (void *)&tableName, tblAttrs, rbfmScanIterator);
+    rm_ScanIterator.rbfmScanIterator = rbfmScanIterator; 
 	cout << "RBFM scan: " << rc << endl;
     if(rc != 0) return -1;
 
@@ -325,6 +325,7 @@ RC RelationManager::scan(const string &tableName,
     getAttributes(tableName, recordDescriptor);
 
     rc = _rbfm->scan(fh, recordDescriptor, tableName, compOp, value, attributeNames, rbfmScanIterator);
+    rm_ScanIterator.rbfmScanIterator = rbfmScanIterator; 
     if(rc != 0) return -1;
     
     
