@@ -1,188 +1,138 @@
 
 ***** RM TEST - Deleting the Catalog and User tables *****
 Opened tables.tbl
-Delete table: tbl_employee
+************deleteTable:tbl_employee
 In scan, opened tables.tbl
 scanning for table: tables
-scan value: tbl_employee
-RBFM scan: 0
+value*: tbl_employee
+value (int): 0x5a15378
 Right before RM_SI get next tuple
-database value: tables
-search value: tbl_employee
-Condition on: table-name
-failed: 0
-getNextRecord: 0
+__getNextRecord: 0
 BEFORE_PRINT TUPLE 
 table-id: 1	table-name: tables	file-name: tables.tbl	privileged: 0	
-Table: (tbl_employee, 1)
-Condition on: table-id
-failed: 1
-Condition on: table-id
-failed: 1
-Condition on: table-id
-failed: 1
-Condition on: table-id
-failed: 1
-Condition on: table-id
-failed: 0
-getNextRecord: 0
+Table: (tables, 1)
+Setup COLUMN_ITERATOR
+__getNextRecord: 0
 column-name: table-id	column-type: 0	column-length: 4	
 Column test: table-id
 REC DESC: table-id 0 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: column-name	column-type: 2	column-length: 50	
-Column test: column-name
-REC DESC: column-name 2 50
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: column-type	column-type: 0	column-length: 4	
-Column test: column-type
-REC DESC: column-type 0 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: column-length	column-type: 0	column-length: 4	
-Column test: column-length
-REC DESC: column-length 0 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: column-position	column-type: 0	column-length: 4	
-Column test: column-position
-REC DESC: column-position 0 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: EmpName	column-type: 2	column-length: 30	
-Column test: EmpName
-REC DESC: EmpName 2 30
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: Age	column-type: 0	column-length: 4	
-Column test: Age
-REC DESC: Age 0 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: Height	column-type: 1	column-length: 4	
-Column test: Height
-REC DESC: Height 1 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: Salary	column-type: 0	column-length: 4	
-Column test: Salary
-REC DESC: Salary 0 4
-getNextRecord: -1
+__getNextRecord: 0
+column-name: table-name	column-type: 2	column-length: 50	
+Column test: table-name
+REC DESC: table-name 2 50
+__getNextRecord: 0
+column-name: file-name	column-type: 2	column-length: 50	
+Column test: file-name
+REC DESC: file-name 2 50
+__getNextRecord: 0
+column-name: privileged	column-type: 0	column-length: 4	
+Column test: privileged
+REC DESC: privileged 0 4
+__getNextRecord: -1
 Final rec descriptor: 
 0 table-id 0 4
-1 column-name 2 50
-2 column-type 0 4
-3 column-length 0 4
-4 column-position 0 4
-5 EmpName 2 30
-6 Age 0 4
-7 Height 1 4
-8 Salary 0 4
+1 table-name 2 50
+2 file-name 2 50
+3 privileged 0 4
 Openeing file table: tables
 Setup RD... 
  condAttr: table-name
 where it equals: tbl_employee
-Scan result: 0
-In scan, opened tables.tbl
-scanning for table: tables
-scan value: tbl_employee
-RBFM scan: 0
-Right before RM_SI get next tuple
-database value: tables
-search value: tbl_employee
-Condition on: table-name
-failed: 0
-getNextRecord: 0
-BEFORE_PRINT TUPLE 
-table-id: 1	table-name: tables	file-name: tables.tbl	privileged: 0	
-Table: (tbl_employee, 1)
-Condition on: table-id
-failed: 1
-Condition on: table-id
-failed: 1
-Condition on: table-id
-failed: 1
-Condition on: table-id
-failed: 1
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: table-id	column-type: 0	column-length: 4	
-Column test: table-id
-REC DESC: table-id 0 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: column-name	column-type: 2	column-length: 50	
-Column test: column-name
-REC DESC: column-name 2 50
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: column-type	column-type: 0	column-length: 4	
-Column test: column-type
-REC DESC: column-type 0 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: column-length	column-type: 0	column-length: 4	
-Column test: column-length
-REC DESC: column-length 0 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: column-position	column-type: 0	column-length: 4	
-Column test: column-position
-REC DESC: column-position 0 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: EmpName	column-type: 2	column-length: 30	
-Column test: EmpName
-REC DESC: EmpName 2 30
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: Age	column-type: 0	column-length: 4	
-Column test: Age
-REC DESC: Age 0 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: Height	column-type: 1	column-length: 4	
-Column test: Height
-REC DESC: Height 1 4
-Condition on: table-id
-failed: 0
-getNextRecord: 0
-column-name: Salary	column-type: 0	column-length: 4	
-Column test: Salary
-REC DESC: Salary 0 4
-getNextRecord: -1
-Final rec descriptor: 
-0 table-id 0 4
-1 column-name 2 50
-2 column-type 0 4
-3 column-length 0 4
-4 column-position 0 4
-5 EmpName 2 30
-6 Age 0 4
-7 Height 1 4
-8 Salary 0 4
-Openeing file table: tables
-Setup RD... 
- condAttr: table-name
-where it equals: tbl_employee
+RBFM__SCAN: 0
+___!__Scan result: 0
 FUCK
-getNextRecord: -1
+__getNextRecord: 0
+wow Table: (tbl_employee, 3)
+GET_ATTRIBUTES 
+In scan, opened tables.tbl
+scanning for table: tables
+value*: tables
+value (int): 0x5a1dc08
+Right before RM_SI get next tuple
+__getNextRecord: 0
+BEFORE_PRINT TUPLE 
+table-id: 1	table-name: tables	file-name: tables.tbl	privileged: 0	
+Table: (tables, 1)
+Setup COLUMN_ITERATOR
+__getNextRecord: 0
+column-name: table-id	column-type: 0	column-length: 4	
+Column test: table-id
+REC DESC: table-id 0 4
+__getNextRecord: 0
+column-name: table-name	column-type: 2	column-length: 50	
+Column test: table-name
+REC DESC: table-name 2 50
+__getNextRecord: 0
+column-name: file-name	column-type: 2	column-length: 50	
+Column test: file-name
+REC DESC: file-name 2 50
+__getNextRecord: 0
+column-name: privileged	column-type: 0	column-length: 4	
+Column test: privileged
+REC DESC: privileged 0 4
+__getNextRecord: -1
+Final rec descriptor: 
+0 table-id 0 4
+1 table-name 2 50
+2 file-name 2 50
+3 privileged 0 4
+Openeing file table: tables
+Setup RD... 
+ condAttr: table-name
+where it equals: tables
+RBFM__SCAN: 0
+BEFORE_GET_ATTRIBUTES_GET_NEXT_TUPLE*******
+__getNextRecord: 0
+Table: (tables, 1) ---------------
+In scan, opened tables.tbl
+scanning for table: columns
+value*: 
+value (int): 0xffefff75c
+Right before RM_SI get next tuple
+__getNextRecord: 0
+BEFORE_PRINT TUPLE 
+table-id: 2	table-name: columns	file-name: columns.tbl	privileged: 0	
+Table: (columns, 2)
+Setup COLUMN_ITERATOR
+__getNextRecord: 0
+column-name: table-id	column-type: 0	column-length: 4	
+Column test: table-id
+REC DESC: table-id 0 4
+__getNextRecord: 0
+column-name: column-name	column-type: 2	column-length: 50	
+Column test: column-name
+REC DESC: column-name 2 50
+__getNextRecord: 0
+column-name: column-type	column-type: 0	column-length: 4	
+Column test: column-type
+REC DESC: column-type 0 4
+__getNextRecord: 0
+column-name: column-length	column-type: 0	column-length: 4	
+Column test: column-length
+REC DESC: column-length 0 4
+__getNextRecord: 0
+column-name: column-position	column-type: 0	column-length: 4	
+Column test: column-position
+REC DESC: column-position 0 4
+__getNextRecord: -1
+Final rec descriptor: 
+0 table-id 0 4
+1 column-name 2 50
+2 column-type 0 4
+3 column-length 0 4
+4 column-position 0 4
+Openeing file table: columns
+Setup RD... 
+ condAttr: table-id
+where it equals: 
+RBFM__SCAN: 0
+__getNextRecord: 0
+!++!+!Column: table-id
+__getNextRecord: 0
+!++!+!Column: table-name
+__getNextRecord: 0
+!++!+!Column: file-name
+__getNextRecord: 0
+!++!+!Column: privileged
+__getNextRecord: -1
 Deleting tbl_employee failed.

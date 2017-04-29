@@ -133,17 +133,21 @@ RC RelationManager::deleteTable(const string &tableName)
     int tableId;
     memcpy(&tableId, (char *)returnedData + 1, sizeof(int));
     cout << "wow Table: (" << tableName << ", " << tableId << ")"  << endl;
+    
+    cout << "rid: " << rid.pageNum  << '.' << rid.slotNum << endl;
+    int test = _rbfm->deleteRecord(fh, tablesColumns(), rid);
 
-    if(deleteTuple("tables", rid) != 0) return -1;
-    cout << "After deleting the rid of table" << endl;   
+    cout << "delete Record: " << test << endl;
+    // if(deleteTuple("tables", rid) != 0) return -1;
+    // cout << "After deleting the rid of table" << endl;   
  
-    const vector<string> colAttrs ({"column-name"});
-    rc = scan("columns", "table-id", EQ_OP, (void *)&tableId, colAttrs, *rmsi);
-    if(rc != 0) return -1;
+    // const vector<string> colAttrs ({"column-name"});
+    // rc = scan("columns", "table-id", EQ_OP, (void *)&tableId, colAttrs, *rmsi);
+    // if(rc != 0) return -1;
 
-    while(rmsi->getNextTuple(rid, returnedData) != RM_EOF) {
-        if(deleteTuple("columns", rid) != 0) return -1;
-    }
+    // while(rmsi->getNextTuple(rid, returnedData) != RM_EOF) {
+        // if(deleteTuple("columns", rid) != 0) return -1;
+    // }
             
     return 0;
 }

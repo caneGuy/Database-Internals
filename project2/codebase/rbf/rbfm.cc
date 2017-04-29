@@ -585,26 +585,23 @@ RC RecordBasedFileManager::scan(FileHandle &fileHandle,
 }
 
 
-RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) { 
-    
-    // check if done with this page or first time called
+RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {     
     
     int failed = 0;   
     
     do {
         
-        
-    if (curr_page == -1 || max_slots == curr_slot) {
-        curr_page++;
-        if (fh.readPage(curr_page, page) != 0) return RBFM_EOF;        
-        memcpy(&max_slots, &page[PAGE_SIZE - 4], sizeof(uint16_t));
-        curr_slot = 0;
-    } 
+        // check if done with this page or first time called
+        if (curr_page == -1 || max_slots == curr_slot) {
+            curr_page++;
+            if (fh.readPage(curr_page, page) != 0) return RBFM_EOF;        
+            memcpy(&max_slots, &page[PAGE_SIZE - 4], sizeof(uint16_t));
+            curr_slot = 0;
+        } 
         
         curr_slot++;
         uint16_t record;
-        memcpy(&record, &page[PAGE_SIZE - 4 - 4 * curr_slot], sizeof(uint16_t));    
-        
+        memcpy(&record, &page[PAGE_SIZE - 4 - 4 * curr_slot], sizeof(uint16_t));         
         
         uint16_t fieldCount;
         memcpy(&fieldCount, &page[record], sizeof(int16_t));
@@ -615,17 +612,6 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
         
         char* null_indicator = (char*)malloc(short_nullvec);
         uint16_t null_indicator_count = 0;
-        
-        // for (uint16_t i=0; i < fieldCount; ++i) {
-            // if (index.count(i)){
-                // char target = page[record + sizeof(uint16_t) + i/8];
-                // if (target & (1<<(7-i%8)))
-                    // *null_indicator |=   1 << null_indicator_count;
-                // else
-                    // *null_indicator &= ~(1 << null_indicator_count);
-                // null_indicator_count++;           nullvec     
-            // }
-        // }
         
         uint16_t directory = record + sizeof(uint16_t) + long_nullvec;
         
@@ -649,8 +635,8 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
                             string val = string(&page[record + prev_offset], attlen);  
                             failed = !vc_comp(val);
                                                         
-                            cout << "database value: " << val << endl;
-                            cout << "search value: " << (char*)value << endl;
+                            // cout << "database value: " << val << endl;
+                            // cout << "search value: " << (char*)value << endl;
                             
                         } else if (recordDescriptor[i].type == TypeInt) {
                             int val;
@@ -665,8 +651,8 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
                 } else {
                     failed = 0;
                 }  
-                cout << "Condition on: " << recordDescriptor[i].name << endl;
-                cout << "failed: " << failed << endl;            
+                // cout << "Condition on: " << recordDescriptor[i].name << endl;
+                // cout << "failed: " << failed << endl;            
             }
             
             // if this field is in the map (-> in the vector<string>)
@@ -697,8 +683,10 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
         
     } while (failed != 0);  
     
-    rid.slotNum = curr_slot-1;
-    rid.pageNum = curr_page-1;
+    rid.slotNum = curr_slot;
+    rid.pageNum = curr_page;
+    
+    // cout << "in curr_page << "vs" << rid.pageNum << endl;
 
     return 0;
 }
@@ -726,7 +714,7 @@ uint16_t RBFM_ScanIterator::float_comp(float val) {
 
 uint16_t RBFM_ScanIterator::int_comp(int val) {
     int val2 = *(int*)value;
-    cout << "Comparing (int) " << val2 << " to " << val << endl;
+    // cout << "Comparing (int) " << val2 << " to " << val << endl;
     switch (compOp) {
         case EQ_OP: return !(val2 == val);
         case LT_OP: return !(val2 <  val); 
@@ -740,7 +728,7 @@ uint16_t RBFM_ScanIterator::int_comp(int val) {
 
 uint16_t RBFM_ScanIterator::vc_comp(string val) {
     string val2 = (char*)(value);
-    cout << "Str cmp " << val2 << " to " << val << endl;
+    // cout << "Str cmp " << val2 << " to " << val << endl;
     int cmp = strcmp(val2.c_str(), val.c_str());
     switch (compOp) {
         case EQ_OP: return cmp == 0;
@@ -762,3 +750,16 @@ uint16_t RBFM_ScanIterator::vc_comp(string val) {
      // std::cout << hex << int(p[i]) << " ";
     // }
      // cout << endl << "page end:" << endl;
+     
+     
+     // loop for only nullvec in scan   
+        // for (uint16_t i=0; i < fieldCount; ++i) {
+            // if (index.count(i)){
+                // char target = page[record + sizeof(uint16_t) + i/8];
+                // if (target & (1<<(7-i%8)))
+                    // *null_indicator |=   1 << null_indicator_count;
+                // else
+                    // *null_indicator &= ~(1 << null_indicator_count);
+                // null_indicator_count++;           nullvec     
+            // }
+        // }
