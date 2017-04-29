@@ -1,6 +1,14 @@
 
 #include "rm.h"
 
+RC RM_ScanIterator::getNextTuple(RID &rid, void *data) {
+    return RM_EOF;
+}
+
+RC RM_ScanIterator::close() {
+   return -1;
+}
+
 RelationManager* RelationManager::_rm = 0;
 
 RelationManager* RelationManager::instance()
@@ -14,7 +22,7 @@ RelationManager* RelationManager::instance()
 RelationManager::RelationManager()
 {
    _rbfm = RecordBasedFileManager::instance();
-   stats = fopen("tables.stat", "ab+");
+   stats = fopen("tables.stat", "wrb+");
    assert(stats != NULL);
 }
 
@@ -42,17 +50,12 @@ RC RelationManager::createCatalog()
 
 RC RelationManager::deleteCatalog()
 {
-    //FileHandle fh;
-    //int rc = _rbfm->openFile("tables.tbl", fh);
-    //if(rc != 0) return -1;
-    
-   
     int tbl_rc = _rbfm->destroyFile("tables.tbl");
     int col_rc = _rbfm->destroyFile("columns.tbl");
     if(tbl_rc != 0 || col_rc != 0) return -1;
 
-    FILE* rc = fopen("tables.stat", "w");
-    if(rc == NULL) return -1;    
+    int rc = remove("tables.stat");
+    if(rc != 0) return -1;    
 
     return 0;
 }
@@ -72,7 +75,6 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
    cout << "Insert table rec (crateTable) " << rc << endl;
    if(rc != 0) return -1;
  
-   maxId += 1;
    rc = setMaxTableId(maxId);
    if(rc != 0) return -1;
 
@@ -142,7 +144,56 @@ RC RelationManager::scan(const string &tableName,
       const vector<string> &attributeNames,
       RM_ScanIterator &rm_ScanIterator)
 {
-    return -1;
+    // get record descriptor for this table
+    // check that the columns in the predicate or projection are in record descriptor
+
+    // setup iterator for tables table (and then columns table with that id)
+     
+    RBFM_ScanIterator rbfmScanIterator;
+    rm_ScanIterator.rbfmScanIterator = rbfmScanIterator; 
+    
+    FileHandle fh;
+    int rc = _rbfm->openFile("tables.tbl", fh);
+    if(rc != 0) return -1;
+    
+    const vector<string> tblAttrs ({"table-id"});
+    rc = _rbfm->scan(fh, tablesColumns(), "table-name", EQ_OP, (void *)&tableName, tblAttrs, rbfmScanIterator);
+    if(rc != 0) return -1;
+    
+    RID rid;
+    void *returnedData = malloc(PAGE_SIZE);
+
+    unordered_set<string> givenColumns ({conditionAttribute});
+    for(unsigned int i = 0; i < attributeNames.size(); ++i) { 
+        givenColumns.insert(attributeNames.at(i));
+    }
+    
+    unordered_set<string> sysColumns; 
+    if(rm_ScanIterator.getNextTuple(rid, returnedData) == RM_EOF) return -1;
+
+    int offset = 1;
+    char *ptr = (char *)returnedData;
+ 
+    int len;
+    memcpy(&len, ptr + 1, sizeof(int));
+    offset += sizeof(int);
+        
+    string tmp;
+    tmp.assign(ptr[offset], ptr[offset] + len);
+    cout << "Column: " << tmp << endl;
+        
+    sysColumns.insert(tmp);
+        
+    // null byte, var-char length (4), value
+    
+    /*FileHandle fh;
+    int rc = _rbfm->openFile(tableName + ".tbl", fh);
+    if(rc != 0) return -1;*/
+
+
+    //rc = _rbfm->scan(fh, tablesColumns(), conditionAttribute, compOp, value, attributeNames, rbfmScanIterator);
+
+    return 0;
 }
 
 
@@ -175,7 +226,7 @@ RC RelationManager::prepareColumnRecord(const int tableId, const int nameLength,
    offset += sizeof(int);
 
    *tupleSize = offset;
-   cout << "Finished prepareColumnRecord" << endl;   
+   //cout << "Finished prepareColumnRecord" << endl;   
 
    return 0;
 }
@@ -205,12 +256,12 @@ RC RelationManager::prepareTableRecord(const int tableId, const int nameLength, 
    memcpy((char *)buffer + offset, file.c_str(), fileLength);
    offset += fileLength;
 
-   cout << "Privlege byte: " << privileged << endl; 
+   //cout << "Privlege byte: " << privileged << endl; 
    memcpy((char *)buffer + offset, &privileged, sizeof(int));
    offset += sizeof(int);
 
    *tupleSize = offset;
-   cout << "Finished prepareTableRecord" << endl;   
+   //cout << "Finished prepareTableRecord" << endl;   
 
    return 0;
 }
@@ -236,7 +287,7 @@ RC RelationManager::insertTableRecords() {
    if(rc != 0) return -1;
 
    rc = setMaxTableId(tableId);
-   cout << "Set max id: " << rc << endl;
+   cout << "Set max id: " << tableId << endl;
    if(rc != 0) return -1;
    
    return 0;
@@ -352,32 +403,32 @@ RC RelationManager::insertTableRecord(FileHandle &fh, const int tableId, const s
    size_t size = 1 + sizeof(int) + sizeof(int) + name.length() + sizeof(int) + fileName.length() + sizeof(int);
    
    void *record = malloc(size);
-   cout << "After malloc of record" << endl;
+   // cout << "After malloc of record" << endl;
    prepareTableRecord(tableId, name.length(), name, fileName.length(), fileName, privileged, record, &recordSize);
    int rc = _rbfm->insertRecord(fh, recordDescriptor, record, rid);
    if(rc != 0) return -1;
-   cout << "After insert record" << endl;   
+   // cout << "After insert record" << endl;   
 
    void *returnedData = malloc(size);
    _rbfm->readRecord(fh, recordDescriptor, rid, returnedData);
-   cout << "After read record" << endl;
+   // cout << "After read record" << endl;
    if(memcmp(record, returnedData, recordSize) != 0) {
-      cout << "FATAL ERROR" << endl;
+      // cout << "FATAL ERROR" << endl;
    }
 
-   cout << "Inserted start" << endl; 
+   // cout << "Inserted start" << endl; 
    const char* p = reinterpret_cast< const char *>(record);
    for ( unsigned int i = 0; i < size; i++ ) {
-      std::cout << hex << int(p[i]) << " ";
+      // std::cout << hex << int(p[i]) << " ";
    }
-   cout << endl << "Inserted end" << endl;
+   // cout << endl << "Inserted end" << endl;
 
-   cout << "Inserted start" << endl; 
+   // cout << "Inserted start" << endl; 
    p = reinterpret_cast< const char *>(returnedData);
    for ( unsigned int i = 0; i < size; i++ ) {
-      std::cout << hex << int(p[i]) << " ";
+      // std::cout << hex << int(p[i]) << " ";
    }
-   cout << endl << "Inserted end" << endl;
+   // cout << endl << "Inserted end" << endl;
    
    return 0;
 }
@@ -392,33 +443,33 @@ RC RelationManager::insertColumnRecord(FileHandle &fh, const int tableId, const 
    size_t size = 1 + sizeof(int) + sizeof(int) + name.length() + sizeof(int) + sizeof(int) + sizeof(int);
    
    void *record = malloc(size);
-   cout << "After malloc of record" << endl;
+   // cout << "After malloc of record" << endl;
 
    prepareColumnRecord(tableId, name.length(), name, colType, colLength, colPos, record, &recordSize);
    int rc = _rbfm->insertRecord(fh, recordDescriptor, record, rid);
    if(rc != 0) return -1;
-   cout << "After insert record" << endl;   
+   // cout << "After insert record" << endl;   
 
    void *returnedData = malloc(size);
    _rbfm->readRecord(fh, recordDescriptor, rid, returnedData);
-   cout << "After read record" << endl;
+   // cout << "After read record" << endl;
    if(memcmp(record, returnedData, recordSize) != 0) {
-      cout << "FATAL ERROR" << endl;
+      // cout << "FATAL ERROR" << endl;
    }
 
-   cout << "Inserted start" << endl; 
+   // cout << "Inserted start" << endl; 
    const char* p = reinterpret_cast< const char *>(record);
    for ( unsigned int i = 0; i < size; i++ ) {
-      std::cout << hex << int(p[i]) << " ";
+      // std::cout << hex << int(p[i]) << " ";
    }
-   cout << endl << "Inserted end" << endl;
+   // cout << endl << "Inserted end" << endl;
 
-   cout << "Inserted start" << endl; 
+   // cout << "Inserted start" << endl; 
    p = reinterpret_cast< const char *>(returnedData);
    for ( unsigned int i = 0; i < size; i++ ) {
-      std::cout << hex << int(p[i]) << " ";
+      // std::cout << hex << int(p[i]) << " ";
    }
-   cout << endl << "Inserted end" << endl;
+   // cout << endl << "Inserted end" << endl;
    
    return 0;
 }
@@ -439,6 +490,7 @@ RC RelationManager::setMaxTableId(int maxId) {
    int rc = fseek(stats, 0, SEEK_SET);
    if (rc != 0) return -1;
 
+   cout << "writing: " << maxId << endl;
    rc = fwrite(&maxId, sizeof(int), 1, stats);
    if (rc != 1) return -1;
    

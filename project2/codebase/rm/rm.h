@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <cassert>
+#include <unordered_set>
 
 #include "../rbf/rbfm.h"
 
@@ -16,13 +17,16 @@ using namespace std;
 
 // RM_ScanIterator is an iteratr to go through tuples
 class RM_ScanIterator {
+friend class RelationManager;
 public:
   RM_ScanIterator() {};
   ~RM_ScanIterator() {};
 
   // "data" follows the same format as RelationManager::insertTuple()
-  RC getNextTuple(RID &rid, void *data) { return RM_EOF; };
-  RC close() { return -1; };
+  RC getNextTuple(RID &rid, void *data);
+  RC close();
+private:
+  RBFM_ScanIterator rbfmScanIterator;
 };
 
 
