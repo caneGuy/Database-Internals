@@ -353,40 +353,36 @@ RC RecordBasedFileManager::readAttribute(FileHandle &fileHandle, const vector<At
     
     uint16_t index;
     for (index = 0; index < recordDescriptor.size(); ++index) {
-        cout << recordDescriptor[index].name << endl;
+        if (recordDescriptor[index].name == attributeName) {
+            break;
+        }
     }
+    cout << index << endl;
+    
+    char target = page[record + sizeof(uint16_t) + index/8];
+    // if field is null
+    if (target & (1<<(7-index%8))) {
+        memset(data, 1, 1);
+    } else {
+        memset(data, 0, 1);
+    }
+    
+    uint16_t nullvec = ceil(fieldCount / 8.0);
+    
+    uint16_t begin_offset;
+    memcpy(&begin_offset, &page[record + sizeof(uint16_t) + nullvec + (index - 1) * sizeof(uint16_t)], sizeof(uint16_t));
+    uint16_t end_offset;
+    memcpy(&end_offset, &page[record + sizeof(uint16_t) + nullvec + index * sizeof(uint16_t)], sizeof(uint16_t));
+    
+    if (recordDescriptor[index].type == TypeVarChar){
+        int diff = end_offset - begin_offset;
+        memcpy((char*)data + 1, &diff, sizeof(int));
+        memcpy((char*)data + 1 + sizeof(int), &page[record + begin_offset], diff);
+    } else {
+        memcpy((char*)data + 1, &page[record + begin_offset], sizeof(int));
+    }     
     
     return 0;
-    
-
-    uint16_t nullvec = ceil(fieldCount / 8.0);
-    // memcpy(data, &page[record + sizeof(uint16_t)], nullvec);
-    
-    uint16_t directory = record + sizeof(uint16_t) + nullvec;
-    
-    uint16_t offset = sizeof(uint16_t) + nullvec + fieldCount * sizeof(uint16_t);
-    uint16_t prev_offset = offset;
-    char *data_c = (char*)data+nullvec;
-    
-    for(uint16_t i = 0; i < fieldCount; ++i) {
-        char target = *((char*)data + (char)(i/8));
-        if (!(target & (1<<(7-i%8)))) {
-            memcpy(&offset, &page[directory + i * sizeof(uint16_t)], sizeof(uint16_t));
-            if (recordDescriptor[i].type == TypeVarChar) {
-                int attlen = offset - prev_offset;
-                memcpy(&data_c[0], &attlen, sizeof(int));
-                memcpy(&data_c[4], &page[record + prev_offset], attlen);
-                data_c += (4 + attlen);                
-            } else {
-                memcpy(&data_c[0], &page[record + prev_offset], sizeof(int));
-                data_c += sizeof(int); 
-            }
-        }
-        prev_offset = offset;
-    }
-    free(page);
-
-    return 0;    
     
 }
 
@@ -404,7 +400,7 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
             if (recordDescriptor[i].type == TypeVarChar) {
                 int attlen;
                 memcpy(&attlen, &data_c[offset], sizeof(int));
-                //cout << "atlen: " << attlen << endl;
+                // cout << "atlen: " << attlen << endl;
                 char content[attlen + 1];
                 memcpy(content, &data_c[offset + sizeof(int)], attlen );
                 content[attlen] = 0;
@@ -606,7 +602,9 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
         curr_slot++;
         int16_t record;
         memcpy(&record, &page[PAGE_SIZE - 4 - 4 * curr_slot], sizeof(int16_t));  
-        if (record == deleted_entry) {
+        // this worked for the test script, but will not work if there is a forwarding address saved
+        // if (record == deleted_entry) { 
+        if (record < 0) {
             // cout << "This entry was deleted" << endl;
             // cout << "Old RID: " << curr_page << "." << curr_slot << endl;
             // cout << "record offset: " << record << endl;

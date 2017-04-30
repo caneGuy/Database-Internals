@@ -785,8 +785,22 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
     
     cout << endl;
     
+    int number = 3;
+    cout << rid.pageNum << '.' << rid.slotNum << endl;
+    rid.slotNum += 5;
+    rid.pageNum -= 10;
     
-    rbfm->readAttribute(fileHandle, recordDescriptor, rid, "test", returnedData);
+    
+    
+    rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
+    rbfm->printRecord(recordDescriptor, returnedData);
+    
+    rbfm->readAttribute(fileHandle, recordDescriptor, rid, recordDescriptor[number].name, returnedData);
+    
+    vector<Attribute> newvec;
+    newvec.push_back(recordDescriptor[number]);
+    
+    rbfm->printRecord(newvec, returnedData);
 
     // Close the file "test9"
     rc = rbfm->closeFile(fileHandle);
