@@ -1,0 +1,257 @@
+valgrind --leak-check=full --run-libc-freeres=no --leak-check=yes --show-leak-kinds=all --track-origins=yes -v --show-reachable=yes ./rbftest
+****In RBF Test Case 1****
+File test has been created.
+
+Test Case 1 Passed!
+
+****In RBF Test Case 2****
+File test has been destroyed.
+
+Test Case 2 Passed!
+
+****In RBF Test Case 3****
+test1
+File test_1 has been created.
+Test Case 3 Passed!
+
+****In RBF Test Case 4****
+Test Case 4 Passed!
+
+****In RBF Test Case 5****
+Test Case 5 Passed!
+
+****In RBF Test Case 6****
+File test_1 has been destroyed.
+Test Case 6 Passed!
+
+****In RBF Test Case 14****
+File test_2 has been created.
+50 Pages have been successfully appended!
+The data in 25th page is correct!
+File test_2 has been destroyed.
+Test Case 14 Passed!
+
+
+***** In RBF Test Case 8 *****
+File test8 has been created properly.
+
+
+Inserting Data:
+atlen: 8
+EmpName: Anteater	Age: 25	Height: 11414.8	Salary: 6200	
+
+Returned Data:
+atlen: 8
+EmpName: Anteater	Age: 25	Height: 11414.8	Salary: 6200	
+
+File test8 has been destroyed properly.
+
+RBF Test Case 8 Finished! The result will be examined.
+
+
+***** In RBF Test Case 9 *****
+File test9 has been created properly.
+
+Attr Name: Char0 Attr Type: 2 Attr Len: 50
+Attr Name: Int0 Attr Type: 0 Attr Len: 4
+Attr Name: Real0 Attr Type: 1 Attr Len: 4
+Attr Name: Char1 Attr Type: 2 Attr Len: 50
+Attr Name: Int1 Attr Type: 0 Attr Len: 4
+Attr Name: Real1 Attr Type: 1 Attr Len: 4
+Attr Name: Char2 Attr Type: 2 Attr Len: 50
+Attr Name: Int2 Attr Type: 0 Attr Len: 4
+Attr Name: Real2 Attr Type: 1 Attr Len: 4
+Attr Name: Char3 Attr Type: 2 Attr Len: 50
+Attr Name: Int3 Attr Type: 0 Attr Len: 4
+Attr Name: Real3 Attr Type: 1 Attr Len: 4
+Attr Name: Char4 Attr Type: 2 Attr Len: 50
+Attr Name: Int4 Attr Type: 0 Attr Len: 4
+Attr Name: Real4 Attr Type: 1 Attr Len: 4
+Attr Name: Char5 Attr Type: 2 Attr Len: 50
+Attr Name: Int5 Attr Type: 0 Attr Len: 4
+Attr Name: Real5 Attr Type: 1 Attr Len: 4
+Attr Name: Char6 Attr Type: 2 Attr Len: 50
+Attr Name: Int6 Attr Type: 0 Attr Len: 4
+Attr Name: Real6 Attr Type: 1 Attr Len: 4
+Attr Name: Char7 Attr Type: 2 Attr Len: 50
+Attr Name: Int7 Attr Type: 0 Attr Len: 4
+Attr Name: Real7 Attr Type: 1 Attr Len: 4
+Attr Name: Char8 Attr Type: 2 Attr Len: 50
+Attr Name: Int8 Attr Type: 0 Attr Len: 4
+Attr Name: Real8 Attr Type: 1 Attr Len: 4
+Attr Name: Char9 Attr Type: 2 Attr Len: 50
+Attr Name: Int9 Attr Type: 0 Attr Len: 4
+Attr Name: Real9 Attr Type: 1 Attr Len: 4
+
+RID #0: 0, 1
+RID #1000: 51, 14
+Sizes #0: 154
+Sizes #1000: 154
+RBF Test Case 9 Finished! The result will be examined.
+
+
+***** In RBF Test Case 10 *****
+loaded RID #0: 0, 1
+loaded RID #1000: 51, 14
+loaded Sizes #0: 154
+loaded Sizes #1000: 154
+
+Returned Data: 4
+atlen: 6
+Char0: ffffff	Int0: 3	Real0: 4	atlen: 6
+Char1: ffffff	Int1: 3	Real1: 4	atlen: 6
+Char2: ffffff	Int2: 3	Real2: 4	atlen: 6
+Char3: ffffff	Int3: 3	Real3: 4	atlen: 6
+Char4: ffffff	Int4: 3	Real4: 4	atlen: 6
+Char5: ffffff	Int5: 3	Real5: 4	atlen: 6
+Char6: ffffff	Int6: 3	Real6: 4	atlen: 6
+Char7: ffffff	Int7: 3	Real7: 4	atlen: 6
+Char8: ffffff	Int8: 3	Real8: 4	atlen: 6
+Char9: ffffff	Int9: 3	Real9: 4	
+
+Returned Data: 0.2
+atlen: 4
+Char0: dddd	Int0: 1	Real0: 2	atlen: 4
+Char1: dddd	Int1: 1	Real1: 2	atlen: 4
+Char2: dddd	Int2: 1	Real2: 2	atlen: 4
+Char3: dddd	Int3: 1	Real3: 2	atlen: 4
+Char4: dddd	Int4: 1	Real4: 2	atlen: 4
+Char5: dddd	Int5: 1	Real5: 2	atlen: 4
+Char6: dddd	Int6: 1	Real6: 2	atlen: 4
+Char7: dddd	Int7: 1	Real7: 2	atlen: 4
+Char8: dddd	Int8: 1	Real8: 2	atlen: 4
+Char9: dddd	Int9: 1	Real9: 2	
+page_dir is: 4076
+page_dir is: 4076
+page_dir is: 4076
+page_dir is: 4076
+page_dir is: 4076
+page_dir is: 4076
+page_dir is: 4076
+
+Returned Data: 4
+atlen: 4
+Char0: dddd	Int0: 1	Real0: 2	atlen: 4
+Char1: dddd	Int1: 1	Real1: 2	atlen: 4
+Char2: dddd	Int2: 1	Real2: 2	atlen: 4
+Char3: dddd	Int3: 1	Real3: 2	atlen: 4
+Char4: dddd	Int4: 1	Real4: 2	atlen: 4
+Char5: dddd	Int5: 1	Real5: 2	atlen: 4
+Char6: dddd	Int6: 1	Real6: 2	atlen: 4
+Char7: dddd	Int7: 1	Real7: 2	atlen: 4
+Char8: dddd	Int8: 1	Real8: 2	atlen: 4
+Char9: dddd	Int9: 1	Real9: 2	
+here
+
+Returned Data: 4
+atlen: 6
+Char0: rrrrrr	Int0: 1003	Real0: 1004	atlen: 6
+Char1: rrrrrr	Int1: 1003	Real1: 1004	atlen: 6
+Char2: rrrrrr	Int2: 1003	Real2: 1004	atlen: 6
+Char3: rrrrrr	Int3: 1003	Real3: 1004	atlen: 6
+Char4: rrrrrr	Int4: 1003	Real4: 1004	atlen: 6
+Char5: rrrrrr	Int5: 1003	Real5: 1004	atlen: 6
+Char6: rrrrrr	Int6: 1003	Real6: 1004	atlen: 6
+Char7: rrrrrr	Int7: 1003	Real7: 1004	atlen: 6
+Char8: rrrrrr	Int8: 1003	Real8: 1004	atlen: 6
+Char9: rrrrrr	Int9: 1003	Real9: 1004	
+
+Returned Data: 56.14
+atlen: 4
+Char0: pppp	Int0: 1001	Real0: 1002	atlen: 4
+Char1: pppp	Int1: 1001	Real1: 1002	atlen: 4
+Char2: pppp	Int2: 1001	Real2: 1002	atlen: 4
+Char3: pppp	Int3: 1001	Real3: 1002	atlen: 4
+Char4: pppp	Int4: 1001	Real4: 1002	atlen: 4
+Char5: pppp	Int5: 1001	Real5: 1002	atlen: 4
+Char6: pppp	Int6: 1001	Real6: 1002	atlen: 4
+Char7: pppp	Int7: 1001	Real7: 1002	atlen: 4
+Char8: pppp	Int8: 1001	Real8: 1002	atlen: 4
+Char9: pppp	Int9: 1001	Real9: 1002	
+page_dir is: 4056
+page_dir is: 4056
+page_dir is: 4056
+page_dir is: 4056
+page_dir is: 4056
+page_dir is: 4056
+page_dir is: 4056
+
+Returned Data: 9
+atlen: 4
+Char0: pppp	Int0: 1001	Real0: 1002	atlen: 4
+Char1: pppp	Int1: 1001	Real1: 1002	atlen: 4
+Char2: pppp	Int2: 1001	Real2: 1002	atlen: 4
+Char3: pppp	Int3: 1001	Real3: 1002	atlen: 4
+Char4: pppp	Int4: 1001	Real4: 1002	atlen: 4
+Char5: pppp	Int5: 1001	Real5: 1002	atlen: 4
+Char6: pppp	Int6: 1001	Real6: 1002	atlen: 4
+Char7: pppp	Int7: 1001	Real7: 1002	atlen: 4
+Char8: pppp	Int8: 1001	Real8: 1002	atlen: 4
+Char9: pppp	Int9: 1001	Real9: 1002	
+here
+1998: 201.6
+1995: 201.3
+201.3
+201.3
+201.6
+201.6
+201.8
+201.8
+201.9
+201.9
+201.10
+201.10
+201.11
+201.11
+201.12
+201.12
+201.13
+201.13
+7.10
+42.11
+47.11
+52.11
+74.8
+89.8
+99.8
+109.8
+114.8
+119.8
+128.10
+139.9
+162.14
+162.14
+163.11
+167.14
+168.11
+172.14
+173.11
+177.14
+178.11
+178.11
+194.9
+194.9
+195.8
+202.1
+202.2
+202.2
+202.3
+202.3
+202.4
+202.4
+202.5
+202.5
+
+202.5
+atlen: 15
+Char0: qqqqqqqqqqqqqqq	Int0: 1912	Real0: 1913	atlen: 15
+Char1: qqqqqqqqqqqqqqq	Int1: 1912	Real1: 1913	atlen: 15
+Char2: qqqqqqqqqqqqqqq	Int2: 1912	Real2: 1913	atlen: 15
+Char3: qqqqqqqqqqqqqqq	Int3: 1912	Real3: 1913	atlen: 15
+Char4: qqqqqqqqqqqqqqq	Int4: 1912	Real4: 1913	atlen: 15
+Char5: qqqqqqqqqqqqqqq	Int5: 1912	Real5: 1913	atlen: 15
+Char6: qqqqqqqqqqqqqqq	Int6: 1912	Real6: 1913	atlen: 15
+Char7: qqqqqqqqqqqqqqq	Int7: 1912	Real7: 1913	atlen: 15
+Char8: qqqqqqqqqqqqqqq	Int8: 1912	Real8: 1913	atlen: 15
+Char9: qqqqqqqqqqqqqqq	Int9: 1912	Real9: 1913	
+atlen: 251658240

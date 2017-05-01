@@ -1,7 +1,7 @@
 #include "rbfm.h"
-#include "cmath"
 
-RecordBasedFileManager* RecordBasedFileManager::_rbf_manager = 0;
+RecordBasedFileManager* RecordBasedFileManager::_rbf_manager = NULL;
+PagedFileManager *RecordBasedFileManager::_pf_manager = NULL;
 
 RecordBasedFileManager* RecordBasedFileManager::instance()
 {
@@ -13,31 +13,27 @@ RecordBasedFileManager* RecordBasedFileManager::instance()
 
 RecordBasedFileManager::RecordBasedFileManager()
 {
+    _pf_manager = PagedFileManager::instance();
 }
 
 RecordBasedFileManager::~RecordBasedFileManager()
 {
-    free(_rbf_manager);
 }
 
 RC RecordBasedFileManager::createFile(const string &fileName) {
-    PagedFileManager* pfm  = PagedFileManager::instance();
-    return pfm->createFile(fileName);
+    return _pf_manager->createFile(fileName);
 }
 
 RC RecordBasedFileManager::destroyFile(const string &fileName) {
-    PagedFileManager* pfm  = PagedFileManager::instance();
-    return pfm->destroyFile(fileName);
+    return _pf_manager->destroyFile(fileName);
 }
 
 RC RecordBasedFileManager::openFile(const string &fileName, FileHandle &fileHandle) {
-    PagedFileManager* pfm  = PagedFileManager::instance();
-    return pfm->openFile(fileName, fileHandle);
+    return _pf_manager->openFile(fileName, fileHandle);
 }
 
 RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
-    PagedFileManager* pfm  = PagedFileManager::instance();
-    return pfm->closeFile(fileHandle);
+    return _pf_manager->closeFile(fileHandle);
 }
 
 RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {
@@ -116,7 +112,10 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
     } else {
         append_rc = fileHandle.writePage(currPage, page);
     }
-    if (append_rc != 0) return -1;
+    if (append_rc != 0) {
+        free(page);
+        return -1;
+    }
     
     free(record);
     free(page);
@@ -127,27 +126,34 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
     
-    char *page = (char*) calloc(PAGE_SIZE, sizeof(char));      
+    char *page = (char*) calloc(PAGE_SIZE, sizeof(char)); 
     
     int readpage_rc = fileHandle.readPage(rid.pageNum, page);
-    if(readpage_rc != 0) return -1;   
+    if(readpage_rc != 0) {
+        free(page); 
+        return -1;   
+    }
 
     uint16_t count;
     memcpy(&count, &page[PAGE_SIZE - 4], sizeof(uint16_t));
-    if(rid.slotNum > count) return -1;
+    if(rid.slotNum > count) {
+        free(page); 
+        return -1;   
+    }
     
     int16_t record;
     memcpy(&record,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum)], sizeof(int16_t));
     
     if (record == deleted_entry) {
-        cout << "This entry was deleted" << endl;
-        cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        // cout << "This entry was deleted" << endl;
+        // cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        free(page); 
         return -1;
     }
     
     if (record < 0) {
-        cout << "This record was moved to a different page!" << endl;
-        cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        // cout << "This record was moved to a different page!" << endl;
+        // cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
         
         uint16_t pageNum;
         memcpy(&pageNum,  &page[PAGE_SIZE - 2 - (4 * rid.slotNum)], sizeof(uint16_t));
@@ -157,12 +163,16 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
         new_rid.slotNum = record * (-1);       
         cout << "New RID: " << new_rid.pageNum << "." << new_rid.slotNum << endl;
  
+        free(page); 
         return readRecord(fileHandle, recordDescriptor, new_rid, data);
     }
      
     uint16_t fieldCount;
     memcpy(&fieldCount, &page[record], sizeof(int16_t));
-    if (fieldCount != recordDescriptor.size()) return -1;
+    if (fieldCount != recordDescriptor.size()) {
+        free(page); 
+        return -1;   
+    }
 
     uint16_t nullvec = ceil(fieldCount / 8.0);
     memcpy(data, &page[record + sizeof(uint16_t)], nullvec);
@@ -200,7 +210,10 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
     char *page = (char*) calloc(PAGE_SIZE, sizeof(char));      
     
     int readpage_rc = fileHandle.readPage(rid.pageNum, page);
-    if(readpage_rc != 0) return -1;   
+    if(readpage_rc != 0) {
+        free(page); 
+        return -1;   
+    }  
     
     uint16_t record_count;
     uint16_t free_space;
@@ -212,17 +225,16 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
     memcpy(&record_offset,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum)], sizeof(int16_t));    
         
     if (record_offset == deleted_entry) {
-        cout << "This entry was deleted" << endl;
-        cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        // cout << "This entry was deleted" << endl;
+        // cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        free(page);
         return -1;
     }
     
     if (record_offset < 0) {
         
-        //// PROBLEM WITH DELETED
-        
-        cout << "DELETE: This record was moved to a different page!" << endl;
-        cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        // cout << "DELETE: This record was moved to a different page!" << endl;
+        // cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
         
         uint16_t pageNum;
         memcpy(&pageNum,  &page[PAGE_SIZE - 2 - (4 * rid.slotNum)], sizeof(uint16_t));
@@ -230,15 +242,21 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
         RID new_rid;
         new_rid.pageNum = pageNum;
         new_rid.slotNum = record_offset * (-1);       
-        cout << "New RID: " << new_rid.pageNum << "." << new_rid.slotNum << endl;
+        // cout << "New RID: " << new_rid.pageNum << "." << new_rid.slotNum << endl;
  
         // delete the record from the page where it is actually located
-        if (deleteRecord(fileHandle, recordDescriptor, new_rid) != 0) return -1;    
+        if (deleteRecord(fileHandle, recordDescriptor, new_rid) != 0) {
+            free(page); 
+            return -1;   
+        }   
     
         // overwrite this dir entry to indicated deletion
         memcpy(&page[PAGE_SIZE - 4 - (4 * rid.slotNum)], &deleted_entry, sizeof(int16_t));
 
-        if (fileHandle.writePage(rid.pageNum, page) != 0) return -1;
+        if (fileHandle.writePage(rid.pageNum, page) != 0) {
+            free(page); 
+            return -1;   
+        }
         
         free(page);
         return 0;        
@@ -274,7 +292,10 @@ RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Att
     
     memcpy(&page[PAGE_SIZE - 4 - (4 * rid.slotNum)], &deleted_entry, sizeof(int16_t));
 
-    if (fileHandle.writePage(rid.pageNum, page) != 0) return -1;
+    if (fileHandle.writePage(rid.pageNum, page) != 0) {
+        free(page); 
+        return -1;   
+    }
     
     free(page);
     return 0;
@@ -296,7 +317,10 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
     char *page = (char*) calloc(PAGE_SIZE, sizeof(char)); 
     
     int readpage_rc = fileHandle.readPage(rid.pageNum, page);
-    if(readpage_rc != 0) return -1;     
+    if(readpage_rc != 0) {
+        free(page); 
+        return -1;   
+    }     
     
     // overwrite the dir entrie on the old page to point to the new location
      int16_t new_slotNum = new_rid.slotNum * (-1);
@@ -304,9 +328,12 @@ RC RecordBasedFileManager::updateRecord(FileHandle &fileHandle, const vector<Att
     memcpy(&page[PAGE_SIZE - 4 - (4 * rid.slotNum)], &new_slotNum, sizeof( int16_t));
     memcpy(&page[PAGE_SIZE - 2 - (4 * rid.slotNum)], &new_pageNum, sizeof(uint16_t));
     
-    if (fileHandle.writePage(rid.pageNum, page) != -1) return -1;
-    free(page);
+    if (fileHandle.writePage(rid.pageNum, page) != 0) {
+        free(page); 
+        return -1;   
+    }
     
+    free(page);
     return 0;
     
 }
@@ -316,24 +343,31 @@ RC RecordBasedFileManager::readAttribute(FileHandle &fileHandle, const vector<At
     char *page = (char*) calloc(PAGE_SIZE, sizeof(char));      
     
     int readpage_rc = fileHandle.readPage(rid.pageNum, page);
-    if(readpage_rc != 0) return -1;   
+    if(readpage_rc != 0) {
+        free(page); 
+        return -1;   
+    }  
 
     uint16_t count;
     memcpy(&count, &page[PAGE_SIZE - 4], sizeof(uint16_t));
-    if(rid.slotNum > count) return -1;
+    if(rid.slotNum > count) {
+        free(page); 
+        return -1;   
+    }
     
     int16_t record;
     memcpy(&record,  &page[PAGE_SIZE - 4 - (4 * rid.slotNum)], sizeof(int16_t));
     
     if (record == deleted_entry) {
-        cout << "This entry was deleted" << endl;
-        cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        // cout << "This entry was deleted" << endl;
+        // cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        free(page);
         return -1;
     }
     
     if (record < 0) {
-        cout << "This record was moved to a different page!" << endl;
-        cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
+        // cout << "This record was moved to a different page!" << endl;
+        // cout << "Old RID: " << rid.pageNum << "." << rid.slotNum << endl;
         
         uint16_t pageNum;
         memcpy(&pageNum,  &page[PAGE_SIZE - 2 - (4 * rid.slotNum)], sizeof(uint16_t));
@@ -341,15 +375,18 @@ RC RecordBasedFileManager::readAttribute(FileHandle &fileHandle, const vector<At
         RID new_rid;
         new_rid.pageNum = pageNum;
         new_rid.slotNum = record * (-1);       
-        cout << "New RID: " << new_rid.pageNum << "." << new_rid.slotNum << endl;
+        // cout << "New RID: " << new_rid.pageNum << "." << new_rid.slotNum << endl;
  
+        free(page);
         return readAttribute(fileHandle, recordDescriptor, new_rid, attributeName, data);
     }
      
     uint16_t fieldCount;
     memcpy(&fieldCount, &page[record], sizeof(uint16_t));
-    if (fieldCount != recordDescriptor.size()) return -1;
-    
+    if (fieldCount != recordDescriptor.size()) {
+        free(page); 
+        return -1;   
+    }
     
     uint16_t index;
     for (index = 0; index < recordDescriptor.size(); ++index) {
@@ -382,6 +419,7 @@ RC RecordBasedFileManager::readAttribute(FileHandle &fileHandle, const vector<At
         memcpy((char*)data + 1, &page[record + begin_offset], sizeof(int));
     }     
     
+    free(page);
     return 0;
     
 }
@@ -393,6 +431,8 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
     uint16_t offset = ceil(recordDescriptor.size()/8.0);
     const char* data_c = (char*)data;
     
+    cout << count << endl;
+    
     for (int i = 0; i < count; ++i) {
         
         char target = *(data_c + (char)(i/8));
@@ -400,7 +440,7 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
             if (recordDescriptor[i].type == TypeVarChar) {
                 int attlen;
                 memcpy(&attlen, &data_c[offset], sizeof(int));
-                // cout << "atlen: " << attlen << endl;
+                cout << "atlen: " << attlen << endl;
                 char content[attlen + 1];
                 memcpy(content, &data_c[offset + sizeof(int)], attlen );
                 content[attlen] = 0;
@@ -443,7 +483,11 @@ RC RecordBasedFileManager::tryInsert(FileHandle &fileHandle, const vector<Attrib
     uint16_t record_length = makeRecord(recordDescriptor, data, record);
      
     char *page = (char*)calloc(PAGE_SIZE, sizeof(char));       
-    if (fileHandle.readPage(rid.pageNum, page) != 0) return -1;
+    if (fileHandle.readPage(rid.pageNum, page) != 0) {
+        free(record); 
+        free(page);
+        return -1;   
+    }
     
     uint16_t recordCount, freeSpace;   
     memcpy(&recordCount, &page[PAGE_SIZE - 4], sizeof(uint16_t));
@@ -451,15 +495,15 @@ RC RecordBasedFileManager::tryInsert(FileHandle &fileHandle, const vector<Attrib
 
     if (record_length + 4 > PAGE_SIZE - (freeSpace + 4 * recordCount + 4)) {
         
-        cout << "doesn't fit on this page any more" << endl;
+        // cout << "doesn't fit on this page any more" << endl;
         free(record);
         free(page);
         return -1;
     }
     
-    cout << "updated record fit on same page" << endl;
-    cout << "free space is: " << freeSpace << endl;
-    cout << "record_length is: " << record_length << endl;
+    // cout << "updated record fit on same page" << endl;
+    // cout << "free space is: " << freeSpace << endl;
+    // cout << "record_length is: " << record_length << endl;
     
     // write acutal record
     memcpy(page + freeSpace, record, record_length);    
@@ -468,7 +512,7 @@ RC RecordBasedFileManager::tryInsert(FileHandle &fileHandle, const vector<Attrib
     int page_dir = PAGE_SIZE - (4 * rid.slotNum + 4);
     
     
-    cout << "page_dir is: " << page_dir << endl;
+    // cout << "page_dir is: " << page_dir << endl;
     memcpy(page + page_dir    , &freeSpace, sizeof(uint16_t));
     memcpy(page + page_dir + 2, &record_length, sizeof(uint16_t));
     
@@ -476,7 +520,11 @@ RC RecordBasedFileManager::tryInsert(FileHandle &fileHandle, const vector<Attrib
 
     memcpy(page + PAGE_SIZE - 2, &freeSpace, sizeof(uint16_t));    
 
-    if (fileHandle.writePage(rid.pageNum, page) != 0) return -1;
+    if (fileHandle.writePage(rid.pageNum, page) != 0) {
+        free(record); 
+        free(page);
+        return -1;   
+    }
     
     free(record);
     free(page);
@@ -551,7 +599,7 @@ RC RecordBasedFileManager::scan(FileHandle &fileHandle,
     const vector<string> &attributeNames, // a list of projected attributes
     RBFM_ScanIterator &rbfm_ScanIterator) {
     
-    rbfm_ScanIterator.fh = fileHandle;
+    rbfm_ScanIterator.fh = &fileHandle;
     rbfm_ScanIterator.recordDescriptor = recordDescriptor;
     rbfm_ScanIterator.compOp = compOp;
     rbfm_ScanIterator.value = (void*) value;
@@ -594,7 +642,7 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
         if (curr_page == -1 || max_slots == curr_slot) {
             // cout << "curr page " << curr_page << " curr slot " << curr_slot << " max_slots: " << max_slots << endl;
             curr_page++;
-            if (fh.readPage(curr_page, page) != 0) return RBFM_EOF;        
+            if (fh->readPage(curr_page, page) != 0) return RBFM_EOF;        
             memcpy(&max_slots, &page[PAGE_SIZE - 4], sizeof(uint16_t));
             curr_slot = 0;
         } 
@@ -708,9 +756,9 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
 }
 
 RC RBFM_ScanIterator::close() { 
-    RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
-    rbfm->closeFile(fh);
-    free(value);
+    // RecordBasedFileManager* rbfm = RecordBasedFileManager::instance();
+    // rbfm->closeFile(fh);
+    // free(value);
     free(page);
     return 0; 
 }

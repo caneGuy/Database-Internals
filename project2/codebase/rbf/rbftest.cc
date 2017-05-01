@@ -731,7 +731,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
             rbfm->updateRecord(fileHandle, recordDescriptor, returnedData, rids[i]);
             rbfm->updateRecord(fileHandle, recordDescriptor, returnedData, rids[i]);
             
-            RID rid;
+            //RID rid;
             // rbfm->deleteRecord(fileHandle, recordDescriptor, rids[i]);
             // rbfm->insertRecord(fileHandle, recordDescriptor, returnedData, rid);
             // cout << rid.pageNum << '.' << rid.slotNum << endl;
@@ -742,7 +742,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
                 // cout << rid.pageNum << '.' << rid.slotNum << endl;
             // }
             
-            rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
+            //rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
             
             
                    
@@ -787,15 +787,15 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
     
     int number = 3;
     cout << rid.pageNum << '.' << rid.slotNum << endl;
-    rid.slotNum += 5;
-    rid.pageNum -= 10;
+    // rid.slotNum += 5;
+    rid.pageNum -= 43;
     
     
     
     rbfm->readRecord(fileHandle, recordDescriptor, rid, returnedData);
     rbfm->printRecord(recordDescriptor, returnedData);
     
-    rbfm->readAttribute(fileHandle, recordDescriptor, rid, recordDescriptor[number].name, returnedData);
+   cout <<  rbfm->readAttribute(fileHandle, recordDescriptor, rid, recordDescriptor[number].name, returnedData) << endl;
     
     vector<Attribute> newvec;
     newvec.push_back(recordDescriptor[number]);

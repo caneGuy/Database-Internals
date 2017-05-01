@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cstring>
 #include <unordered_set>
+#include <cmath>
 
 #include "../rbf/pfm.h"
 
@@ -72,7 +73,7 @@ public:
   RC getNextRecord(RID &rid, void *data);
   RC close();
 private:
-  FileHandle fh;
+  FileHandle *fh;
   vector<Attribute> recordDescriptor;
   uint16_t conditionAttributeIndex;
   CompOp compOp;
@@ -144,14 +145,14 @@ public:
       const vector<string> &attributeNames, // a list of projected attributes
       RBFM_ScanIterator &rbfm_ScanIterator);
 
-public:
-
 protected:
   ~RecordBasedFileManager();
   RecordBasedFileManager();
 
 private:
   static RecordBasedFileManager *_rbf_manager;
+  static PagedFileManager *_pf_manager;
+  
   RC tryInsert(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, const RID &rid);
   uint16_t makeRecord(const vector<Attribute> &recordDescriptor, const void *data, char *record);
   
