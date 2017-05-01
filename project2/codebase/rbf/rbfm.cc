@@ -18,6 +18,8 @@ RecordBasedFileManager::RecordBasedFileManager()
 
 RecordBasedFileManager::~RecordBasedFileManager()
 {
+    _pf_manager->DestroyInstance();
+    _pf_manager = NULL;
 }
 
 RC RecordBasedFileManager::createFile(const string &fileName) {
@@ -161,7 +163,7 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
         RID new_rid;
         new_rid.pageNum = pageNum;
         new_rid.slotNum = record * (-1);       
-        cout << "New RID: " << new_rid.pageNum << "." << new_rid.slotNum << endl;
+        // cout << "New RID: " << new_rid.pageNum << "." << new_rid.slotNum << endl;
  
         free(page); 
         return readRecord(fileHandle, recordDescriptor, new_rid, data);
@@ -394,7 +396,7 @@ RC RecordBasedFileManager::readAttribute(FileHandle &fileHandle, const vector<At
             break;
         }
     }
-    cout << index << endl;
+    // << index << endl;
     
     char target = page[record + sizeof(uint16_t) + index/8];
     // if field is null
@@ -431,7 +433,7 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
     uint16_t offset = ceil(recordDescriptor.size()/8.0);
     const char* data_c = (char*)data;
     
-    cout << count << endl;
+    //cout << count << endl;
     
     for (int i = 0; i < count; ++i) {
         
@@ -440,7 +442,7 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
             if (recordDescriptor[i].type == TypeVarChar) {
                 int attlen;
                 memcpy(&attlen, &data_c[offset], sizeof(int));
-                // cout << "atlen: " << attlen << endl;
+                //cout << "atlen: " << attlen << endl;
                 char content[attlen + 1];
                 memcpy(content, &data_c[offset + sizeof(int)], attlen );
                 content[attlen] = 0;
@@ -696,9 +698,10 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
                             int attlen = offset - prev_offset;
                             string val = string(&page[record + prev_offset], attlen);  
                             failed = !vc_comp(val);
-                                                        
+                            
+                            // cout << "curr rid : " << curr_page << '.' << curr_slot << endl;   
                             // cout << "database value: " << val << endl;
-                             // cout << "search value: " << (char*)value << endl;
+                            // cout << "search value: " << (char*)value << endl;
                             
                         } else if (recordDescriptor[i].type == TypeInt) {
                             int val;

@@ -1,5 +1,5 @@
 make
-rm .*tbl *.stat
+rm *.tbl *.stat
 rmtest_create_tables
-rmtest_delete_tables 
+valgrind  -v --leak-check=full --show-leak-kinds=all rmtest 
 

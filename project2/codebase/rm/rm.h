@@ -27,6 +27,7 @@ public:
   RC close();
 private:
   RBFM_ScanIterator *rbfmScanIterator;
+  FileHandle *fileHandle;
 };
 
 
@@ -35,6 +36,7 @@ class RelationManager
 {
 public:
   static RelationManager* instance();
+  static void DestroyInstance() {delete _rm; _rm = NULL;};
 
   RC createCatalog();
 

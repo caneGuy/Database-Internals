@@ -19,6 +19,7 @@ class PagedFileManager
 {
 public:
     static PagedFileManager* instance();                                  // Access to the _pf_manager instance
+    static void DestroyInstance() {delete _pf_manager; _pf_manager = NULL;};
 
     RC createFile    (const string &fileName);                            // Create a new file
     RC destroyFile   (const string &fileName);                            // Destroy a file

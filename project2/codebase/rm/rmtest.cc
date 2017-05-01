@@ -340,9 +340,9 @@ RC TEST_RM_6(const string &tableName)
 
     RID rids[numTuples];
     set<int> ages; 
+        tuple = malloc(200);
     for(int i = 0; i < numTuples; i++)
     {
-        tuple = malloc(200);
 
         // Insert Tuple
         float height = (float)i;
@@ -354,6 +354,7 @@ RC TEST_RM_6(const string &tableName)
 
         rids[i] = rid;
     }
+    free(tuple);
 
     // Set up the iterator
     RM_ScanIterator rmsi;
@@ -713,6 +714,10 @@ RC TEST_RM_13(const string &tableName)
     vector<Attribute> attrs;
     RC rc = rm->getAttributes(tableName, attrs);
     assert(rc == success && "RelationManager::getAttributes() should not fail.");
+    
+    for (const Attribute &a : attrs) {
+        cout << a.name << " " << a.type << " " << a.length << endl;
+    }
 
     int nullAttributesIndicatorActualSize = getActualByteForNullsIndicator(attrs.size());
     unsigned char *nullsIndicator = (unsigned char *) malloc(nullAttributesIndicatorActualSize);
@@ -728,10 +733,21 @@ RC TEST_RM_13(const string &tableName)
         age = (rand()%20) + 15;
 
         prepareTuple(attrs.size(), nullsIndicator, 6, "Tester", age, height, 123, tuple, &tupleSize);
+        
+        
+    // // Insert a tuple into a table
+    // prepareTuple(attrs.size(), nullsIndicator, nameLength, name, age, height, salary, tuple, &tupleSize);
+    // cout << "The tuple to be inserted:" << endl;
+    // rc = rm->printTuple(attrs, tuple);
+    // cout << endl;
+        
+        //rm->printTuple(attrs, tuple);
+        
         rc = rm->insertTuple(tableName, tuple, rid);
         assert(rc == success && "RelationManager::insertTuple() should not fail.");
 
         rids[i] = rid;
+        free(tuple);
     }
 
     // Set up the iterator
@@ -821,6 +837,7 @@ RC TEST_RM_13b(const string &tableName)
         assert(rc == success && "RelationManager::insertTuple() should not fail.");
 
         rids[i] = rid;
+        free(tuple);
     }
 
     // Set up the iterator
@@ -985,6 +1002,7 @@ RC TEST_RM_15(const string &tableName)
     rc = rm->deleteTable(tableName);
     assert(rc != success && "RelationManager::deleteTable() on the system catalog table should fail.");
 
+    cout << "***** FINISHED TEST CASE 15 ******* " << endl;
     free(returnedData);
     cout << "***** Test Case 15 Finished. The result will be examined. *****" << endl;
     return 0;
@@ -1046,16 +1064,19 @@ int main()
     rcmain = TEST_RM_13b("tbl_b_employee5");
 
     // NOTE: your Tables table must be called "Tables"
-    string catalog_table_name = "Tables";
+    string catalog_table_name = "tables";
 
     // Test Catalog Information
     rcmain = TEST_RM_14(catalog_table_name);
     
     // NOTE: your Columns table must be called "Columns"
-    string catalog_table_name_columns = "Columns";
+    string catalog_table_name_columns = "columns";
 
     // Test Catalog Information
     rcmain = TEST_RM_15(catalog_table_name_columns);
+    
+    rm->DestroyInstance();
+    //free(rm);
     
     return 0;
 }

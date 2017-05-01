@@ -95,6 +95,7 @@ class RecordBasedFileManager
 {
 public:
   static RecordBasedFileManager* instance();
+  static void DestroyInstance() {delete _rbf_manager; _rbf_manager = NULL;};
 
   RC createFile(const string &fileName);
   
