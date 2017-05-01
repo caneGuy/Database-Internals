@@ -753,8 +753,8 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
             
             cout << "here" << endl;
             
-            // rc = rbfm->deleteRecord(fileHandle, recordDescriptor, rids[i]);
-            // rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
+            rc = rbfm->deleteRecord(fileHandle, recordDescriptor, rids[i]);
+            rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
             // return -1;
         }
 
@@ -798,9 +798,27 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
    cout <<  rbfm->readAttribute(fileHandle, recordDescriptor, rid, recordDescriptor[number].name, returnedData) << endl;
     
     vector<Attribute> newvec;
-    newvec.push_back(recordDescriptor[number]);
+    newvec.push_back(recordDescriptor[1]);
+    newvec.push_back(recordDescriptor[6]);
     
-    rbfm->printRecord(newvec, returnedData);
+   // rbfm->printRecord(newvec, returnedData);
+    
+    // cout << "SCAN-----------------------------------------" << endl;
+    
+    
+    // RBFM_ScanIterator rbfmScanIterator;
+    // int eger = 7;
+    // vector<string> attibutes = {"Int0", "Char2"};
+    // cout << rbfm->scan(fileHandle, recordDescriptor, "Int4", LT_OP, &eger, attibutes, rbfmScanIterator) << endl;
+    
+    // while (rbfmScanIterator.getNextRecord(rid, returnedData) != -1) {
+        // cout << "RID: " << rid.pageNum << '.' << rid.slotNum << endl;
+        // rbfm->printRecord(newvec, returnedData);
+    // }
+    
+    // rbfmScanIterator.close();
+    
+    
 
     // Close the file "test9"
     rc = rbfm->closeFile(fileHandle);

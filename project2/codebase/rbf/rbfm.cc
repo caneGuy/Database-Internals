@@ -440,7 +440,7 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
             if (recordDescriptor[i].type == TypeVarChar) {
                 int attlen;
                 memcpy(&attlen, &data_c[offset], sizeof(int));
-                cout << "atlen: " << attlen << endl;
+                // cout << "atlen: " << attlen << endl;
                 char content[attlen + 1];
                 memcpy(content, &data_c[offset + sizeof(int)], attlen );
                 content[attlen] = 0;
@@ -608,17 +608,17 @@ RC RecordBasedFileManager::scan(FileHandle &fileHandle,
     rbfm_ScanIterator.page = (char*)malloc(PAGE_SIZE); ;
     rbfm_ScanIterator.attributeNamesCount = attributeNames.size();
     
-    unordered_set<uint16_t> index;
+    unordered_set<uint16_t> __index;
     for (uint16_t i = 0; i < recordDescriptor.size(); ++i) {
         for (uint16_t j = 0; j < attributeNames.size(); ++j) {
             if (attributeNames[j] == recordDescriptor[i].name) {
-                index.insert(i);
+                __index.insert(i);
                 break;
             }            
         }
     }
     
-    rbfm_ScanIterator.index = index;
+    rbfm_ScanIterator.index = __index;
     
     for (uint16_t i = 0; i < recordDescriptor.size(); ++i) {
         if (conditionAttribute == recordDescriptor[i].name) {
@@ -743,7 +743,8 @@ RC RBFM_ScanIterator::getNextRecord(RID &rid, void *data) {
             prev_offset = offset;
         } 
         
-        memcpy(data, null_indicator, short_nullvec);           
+        memcpy(data, null_indicator, short_nullvec);  
+        free(null_indicator);
         
     } while (failed != 0);  
     
@@ -767,10 +768,10 @@ uint16_t RBFM_ScanIterator::float_comp(float val) {
     float val2 = *(float*)value;
     switch (compOp) {
         case EQ_OP: return !(val2 == val);
-        case LT_OP: return !(val2 <  val); 
-        case GT_OP: return !(val2 >  val); 
-        case LE_OP: return !(val2 <= val); 
-        case GE_OP: return !(val2 >= val); 
+        case LT_OP: return (val2 <= val); 
+        case GT_OP: return (val2 >= val); 
+        case LE_OP: return (val2 <  val); 
+        case GE_OP: return (val2 >  val); 
         case NE_OP: return !(val2 != val);  
         default: return 0;
     }
@@ -781,10 +782,10 @@ uint16_t RBFM_ScanIterator::int_comp(int val) {
     // cout << "Comparing (int) " << val2 << " to " << val << endl;
     switch (compOp) {
         case EQ_OP: return !(val2 == val);
-        case LT_OP: return !(val2 <  val); 
-        case GT_OP: return !(val2 >  val); 
-        case LE_OP: return !(val2 <= val); 
-        case GE_OP: return !(val2 >= val); 
+        case LT_OP: return (val2 <= val); 
+        case GT_OP: return (val2 >= val); 
+        case LE_OP: return (val2 <  val); 
+        case GE_OP: return (val2 >  val); 
         case NE_OP: return !(val2 != val);  
         default: return 0;
     }
@@ -796,10 +797,10 @@ uint16_t RBFM_ScanIterator::vc_comp(string val) {
     int cmp = strcmp(val2.c_str(), val.c_str());
     switch (compOp) {
         case EQ_OP: return cmp == 0;
-        case LT_OP: return cmp <  0; 
-        case GT_OP: return cmp >  0; 
-        case LE_OP: return cmp <= 0; 
-        case GE_OP: return cmp >= 0; 
+        case LT_OP: return !(cmp <= 0); 
+        case GT_OP: return !(cmp >= 0); 
+        case LE_OP: return !(cmp <  0); 
+        case GE_OP: return !(cmp >  0); 
         case NE_OP: return cmp != 0;  
         default: return 0;
     }
