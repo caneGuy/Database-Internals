@@ -1012,6 +1012,9 @@ int main()
 {
     // Get Attributes
     RC rcmain = TEST_RM_0("tbl_employee");
+    if(rcmain) {
+       // silence unused variable rcmain
+     }
 
     rcmain = TEST_RM_1("tbl_employee", 8, "Anteater", 27, 6.2, 10000);
     
@@ -1064,13 +1067,13 @@ int main()
     rcmain = TEST_RM_13b("tbl_b_employee5");
 
     // NOTE: your Tables table must be called "Tables"
-    string catalog_table_name = "tables";
+    string catalog_table_name = "Tables";
 
     // Test Catalog Information
     rcmain = TEST_RM_14(catalog_table_name);
     
     // NOTE: your Columns table must be called "Columns"
-    string catalog_table_name_columns = "columns";
+    string catalog_table_name_columns = "Columns";
 
     // Test Catalog Information
     rcmain = TEST_RM_15(catalog_table_name_columns);

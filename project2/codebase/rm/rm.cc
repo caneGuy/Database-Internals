@@ -59,8 +59,8 @@ RelationManager::~RelationManager()
 
 RC RelationManager::createCatalog()
 {
-    int tbl_rc = _rbfm->createFile("tables.tbl");
-    int col_rc = _rbfm->createFile("columns.tbl");
+    int tbl_rc = _rbfm->createFile("Tables.tbl");
+    int col_rc = _rbfm->createFile("Columns.tbl");
     if(tbl_rc != 0 || col_rc != 0) return -1;
 
     // cout << "Created catalog tbl files" << endl;
@@ -74,8 +74,8 @@ RC RelationManager::createCatalog()
 
 RC RelationManager::deleteCatalog()
 {
-    int tbl_rc = _rbfm->destroyFile("tables.tbl");
-    int col_rc = _rbfm->destroyFile("columns.tbl");
+    int tbl_rc = _rbfm->destroyFile("Tables.tbl");
+    int col_rc = _rbfm->destroyFile("Columns.tbl");
     if(tbl_rc != 0 || col_rc != 0) return -1;
 
     int rc = remove("tables.stat");
@@ -91,7 +91,7 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
    if(rc != 0) return -1;
 
    FileHandle fh;
-   rc = _rbfm->openFile("tables.tbl", fh);
+   rc = _rbfm->openFile("Tables.tbl", fh);
    if(rc != 0) return -1;
 
    int maxId = getMaxTableId() + 1;
@@ -107,7 +107,7 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
    rc = _rbfm->closeFile(fh);
    if(rc != 0) return -1;
 
-   rc = _rbfm->openFile("columns.tbl", fh);
+   rc = _rbfm->openFile("Columns.tbl", fh);
    if(rc != 0) return -1;
 
    for(unsigned int i = 0; i < attrs.size(); ++i) {
@@ -126,7 +126,7 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
 RC RelationManager::deleteTable(const string &tableName)
 {
     FileHandle fh;
-    int rc = _rbfm->openFile("tables.tbl", fh);
+    int rc = _rbfm->openFile("Tables.tbl", fh);
     if(rc != 0) {
         _rbfm->closeFile(fh);
         return -1;
@@ -170,7 +170,7 @@ RC RelationManager::deleteTable(const string &tableName)
    
     const vector<string> colAttrs ({"column-name", "column-type", "column-length"});    
     
-    rc = _rbfm->openFile("columns.tbl", fh);
+    rc = _rbfm->openFile("Columns.tbl", fh);
    
     rc = _rbfm->scan(fh, columnsColumns(), "table-id", EQ_OP, (void *)&tableId, colAttrs, rbsi);
     if(rc != 0) {
@@ -204,7 +204,7 @@ RC RelationManager::getAttributes(const string &tableName, vector<Attribute> &at
 {
     // cout << "GET_ATTRIBUTES " << endl;
     FileHandle fh;
-    int rc = _rbfm->openFile("tables.tbl", fh);
+    int rc = _rbfm->openFile("Tables.tbl", fh);
     if(rc != 0) {
         _rbfm->closeFile(fh);
         return -1;
@@ -215,7 +215,7 @@ RC RelationManager::getAttributes(const string &tableName, vector<Attribute> &at
     
     rc = _rbfm->scan(fh, tablesColumns(), "table-name", EQ_OP, tableName.c_str(), tableAttrs, rbsi);
     if(rc != 0) { 
-        _rbfm->closeFile(fh);    
+       _rbfm->closeFile(fh);    
         rbsi.close();
         return -1;
     }
@@ -239,7 +239,7 @@ RC RelationManager::getAttributes(const string &tableName, vector<Attribute> &at
    
     const vector<string> colAttrs ({"column-name", "column-type", "column-length"});    
     
-    rc = _rbfm->openFile("columns.tbl", fh);
+    rc = _rbfm->openFile("Columns.tbl", fh);
    
     rc = _rbfm->scan(fh, columnsColumns(), "table-id", EQ_OP, (void *)&tableId, colAttrs, rbsi);
     if(rc != 0) {
@@ -504,17 +504,17 @@ RC RelationManager::prepareTableRecord(const int tableId, const int nameLength, 
 RC RelationManager::insertTableRecords() {
   
    FileHandle fh;
-   int rc = _rbfm->openFile("tables.tbl", fh);
+   int rc = _rbfm->openFile("Tables.tbl", fh);
    if(rc != 0) return -1;
-   // cout << "Opened tables.tbl fh" << endl;
+   // cout << "Opened Tables.tbl fh" << endl;
 
    int tableId = getMaxTableId() + 1;
-   rc = insertTableRecord(fh, tableId, "tables", "tables.tbl", TBL_SYS);
+   rc = insertTableRecord(fh, tableId, "Tables", "Tables.tbl", TBL_SYS);
    if(rc != 0) return -1;
-   // cout << "Inserted tables record into tables.tbl file" << endl;
+   // cout << "Inserted tables record into Tables.tbl file" << endl;
 
    tableId += 1;
-   rc = insertTableRecord(fh, tableId, "columns", "columns.tbl", TBL_SYS);
+   rc = insertTableRecord(fh, tableId, "Columns", "Columns.tbl", TBL_SYS);
    if(rc != 0) return -1;
 
    rc = _rbfm->closeFile(fh);
@@ -531,9 +531,9 @@ RC RelationManager::insertTableRecords() {
 RC RelationManager::insertColumnRecords() {
    
    FileHandle fh;
-   int rc = _rbfm->openFile("columns.tbl", fh);
+   int rc = _rbfm->openFile("Columns.tbl", fh);
    if(rc != 0) return -1;
-   // cout << "Opened columns.tbl fh" << endl;
+   // cout << "Opened Columns.tbl fh" << endl;
 
    rc = insertColumnRecord(fh, 1, "table-id", TypeInt, 4, 1);
    if(rc != 0) return -1;

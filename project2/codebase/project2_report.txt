@@ -1,33 +1,66 @@
 1. Basic information
-Team Number : 
-Student ID# of Submitter:
-Name of Submitter: 
+Team Number : 11
+Student ID# of Submitter: 1375886
+Name of Submitter: Travis Takai
 ID#s and Names for others on the Team
+- Brad Bernard 1426712
+- Johannes Pitz 1442286
 
 
 2. Meta-data
 - Show your meta-data design (Tables and Columns table) and information about each column.
 
+We started with the schema presented in the project PDF. The "tables" table initially consisted of: table-id(int), table-name(vc-50), file-name(vc-50). 
+However after reading through the full description of the Catalog we realized we need an extra field: privilege(int) which signaled whether it was a system
+table or a user table. Our columns table is an exact copy of the one in the PDF: table-id(int), column-name(vc-50), column-type(int), column-length(int),
+column-position(int). We named the tables table and the columns table: "Tables" and "Columns" since the test suite rmtest expected those names. 
 
-3. Internal Record Format
+On create catalog, we create the .tbl files (our filename extension for a table file) for columns and tables. Then we insert the rows corresponding to those
+two new tables into themselves so they are self described. Usually inserting into a table we have to scan the tables table by table-name
+and then scan the columns table with the retuned table-id. But since the columns table and the tables table was static, we created a method that holds the 
+static vector of Attributes for both of the tables (rm::columnsColumns() and rm::tablesColumns()). After we had the record descriptors, we also created helper
+methods to insert a record in each of the system tables (rm::insertTableRecord() and rm::insertColumnRecord()). These helper functions called another helper 
+function to prepare the data in the desired record format (rm::prepareTableRecord() and rm::prepareColumnRecord()). After the helper functions were created,
+it made it easy to insert these predefined rows into tables and columns so we created a function to insert these static rows into each of the corresponding
+tables (rm::insertTableRecords() and rm::insertColumnRecords()). These functions just called the non plural version  (rm::insertTableRecord() and rm::insertColumnRecord()) 
+multiple times for each row (2 rows into tables, 9 records into columns).
+
+After we created these sets of helper functions for both of the system tables, we realized we needed a way to track the auto increment id on the tables table. 
+We decided to create a new file "tables.stat" that holds a single integer of the current maximum table id in the tables table. So in RM constructor, we setup
+a file handle to access this statistic file for reading and writing. If it doesn't exist then create it else use the existing file. Whenever we want to create
+a new table (rm::insertTableRecord()) we call our helper function rm::getMaxTableId() to get the current max Id and then insert the new row with one higher than
+that value. After we insert our record we write our new max Id to our stat file through rm::setMaxTableId(). 
+
+3. Iterator
+- Describe design and implementation of the RBFM iterator/scan and the RM iterator/scan and their associated methods.
+RM iterator/scan:
+    We decided that the RBFM iterator would hold all the information passed to the rm::scan() method as private variables. So rm::scan()
+    created took in an RM iterator and setup the iterator by calling the rbfm::scan() method with the correct values. However, before we passed it
+    to the rbfm::scan() we made sure the projection and condition attribute columns existed in the table they were querying on by scanning the columns/tables
+    tables and cross referencing the passed in columns through an unordered_set difference. We also had to pass in a valid column for condition attribute
+    so on NO_OP conditional operator we passed in the first column of the returned schema from our columns scan. After all the data checked out, we finally
+    passed the target scan data into the child rbfm::scan() method which saved all the arguments and setup the scan. 
+
+
+4. Internal Record Format
 - Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that your team hasn't implemented this feature.
 - Describe how you store a VarChar field.
 - Describe how you deal with an update and delete.
 
 
-4. Page Format
+5. Page Format
 - Show your page format design.
 - Describe how you deal with an update and delete.
 
 
-5. File Format
+6. File Format
 - Show your file format design
 
 
 
-6. Implementation Detail
+7. Implementation Detail
 - Other implementation details goes here.
 
 
-7. Other (optional)
+8. Other (optional)
 - Freely use this section to tell us about things that are related to the project 2, but not related to the other sections (optional)
