@@ -87,6 +87,5 @@ or write we fseek to a desired page: PAGE_SIZE * pageNum and after our writes we
 Created an external file table.stat that tracks the tables table current inserted maximum ID. We make sure to delete the file on deleting the 
 catalog and create it when we create the catalog. This is documented above in meta data design last paragraph.
 
-
 8. Other (optional)
 - Freely use this section to tell us about things that are related to the project 2, but not related to the other sections (optional)
