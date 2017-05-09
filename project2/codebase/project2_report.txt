@@ -6,7 +6,6 @@ ID#s and Names for others on the Team
 - Brad Bernard 1426712
 - Johannes Pitz 1442286
 
-
 2. Meta-data
 - Show your meta-data design (Tables and Columns table) and information about each column.
 
@@ -33,33 +32,60 @@ that value. After we insert our record we write our new max Id to our stat file 
 
 3. Iterator
 - Describe design and implementation of the RBFM iterator/scan and the RM iterator/scan and their associated methods.
-RM iterator/scan:
-    We decided that the RBFM iterator would hold all the information passed to the rm::scan() method as private variables. So rm::scan()
-    created took in an RM iterator and setup the iterator by calling the rbfm::scan() method with the correct values. However, before we passed it
-    to the rbfm::scan() we made sure the projection and condition attribute columns existed in the table they were querying on by scanning the columns/tables
-    tables and cross referencing the passed in columns through an unordered_set difference. We also had to pass in a valid column for condition attribute
-    so on NO_OP conditional operator we passed in the first column of the returned schema from our columns scan. After all the data checked out, we finally
-    passed the target scan data into the child rbfm::scan() method which saved all the arguments and setup the scan. 
 
+RM iterator/scan:
+We decided that the RBFM iterator would hold all the information passed to the rm::scan() method as private variables. So rm::scan()
+created took in an RM iterator and setup the iterator by calling the rbfm::scan() method with the correct values. However, before we passed it
+to the rbfm::scan() we made sure the projection and condition attribute columns existed in the table they were querying on by scanning the columns/tables
+tables and cross referencing the passed in columns through an unordered_set difference. We also had to pass in a valid column for condition attribute
+so on NO_OP conditional operator we passed in the first column of the returned schema from our columns scan. After all the data checked out, we finally
+passed the target scan data into the child rbfm::scan() method which saved all the arguments and setup the scan. 
+
+RBFM iterator/scan:
+FILL_IN_HERE
 
 4. Internal Record Format
 - Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that your team hasn't implemented this feature.
-- Describe how you store a VarChar field.
-- Describe how you deal with an update and delete.
+Our records use the following structure:
+| Field count | Null byte(s) | Directory of offsets to end of field value | Values for Fields |
+We based the structure off of the variable length record-format on slide 11 of lecture 3. The field count and all of our directory offsets use a 
+uint16_t since it is large enough to represent any feasible offset and memory efficient since it is half the bytes of an int and unsigned! It provides O(1) 
+accessibility because we know how many fields are present and/or null and we can calculate the offset directly to a field.
+We have an directory entry even for fields that are null, but there is no space wasted for the data since the difference between the current offset
+and the previous offset would be zero, and of course we have null for that field in our null bits.
 
+- Describe how you store a VarChar field.
+The offset of a field minus the previous offset determines the length, so we can avoid padding the varchar if it is less than the varchar length size.
+After we calculate the length of the varchar field, we just grab the bytes, just like any other field, and convert it into a string.
+When we receive a record, if the incoming record attribute vector has a varchar type, then we read the first four bytes as an integer to determine the length of the data.
+
+- Describe how you deal with an update and delete.
+FILL_IN_HERE
 
 5. Page Format
 - Show your page format design.
-- Describe how you deal with an update and delete.
+On a page, the last 2 bytes represents the free space pointer (offset that is a uint16_t byte offset within the page).
+The second to last 2 bytes on the page represents the number of records on the page (uint16_t count).
+After that, there are 4 byte entries corresponding to our directory for finding records on a page.
+The directory entries are ordered by slot number increasing and contain two bytes for the offset of a record within page (uint16_t) and two bytes 
+for the length of record (uint16_t)). Our page has records at the top, free space in the middle (pointed to by free space pointer), and our directory at the bottom.
+The directory grows from bottom up and the records grow from top to bottom so we make sure there is enough space so we don't overwrite anything.
+The rid slot num's begin with 1 and not with 0 (could easily be fixed, but there were no requirements on this).
 
+- Describe how you deal with an update and delete.
+FILL_IN_HERE
 
 6. File Format
 - Show your file format design
-
-
+Our file format is a .tbl file for each table that is created. All tables created are case sensitive names and filenames. Our catalog tables are 
+capitalized first letter: Tables.tbl and Columns.tbl. The actual format for the .tbl file is just a malloc(PAGE_SIZE = 4096) stored in a binary file.
+We get the number of pages in our file by calling stat() on the file and getting the total size in bytes then diving by PAGE_SIZE. Everytime we read
+or write we fseek to a desired page: PAGE_SIZE * pageNum and after our writes we call fflush(file*) to ensure our writes are persistent to the hdd.
 
 7. Implementation Detail
 - Other implementation details goes here.
+Created an external file table.stat that tracks the tables table current inserted maximum ID. We make sure to delete the file on deleting the 
+catalog and create it when we create the catalog. This is documented above in meta data design last paragraph.
 
 
 8. Other (optional)
