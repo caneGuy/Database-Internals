@@ -40,9 +40,14 @@ to the rbfm::scan() we made sure the projection and condition attribute columns 
 tables and cross referencing the passed in columns through an unordered_set difference. We also had to pass in a valid column for condition attribute
 so on NO_OP conditional operator we passed in the first column of the returned schema from our columns scan. After all the data checked out, we finally
 passed the target scan data into the child rbfm::scan() method which saved all the arguments and setup the scan. 
+NextTuple then calls NextRecord.
 
 RBFM iterator/scan:
-FILL_IN_HERE
+In the scan function we save all the arguments that were passed in, and collect all the indexes of the columns that we want to return. 
+We also save the index of conditionAttribute, a currPage and currSlot.
+In the nextRecord function we have a loop that reads a new page if necessary (if this fails if we reach the last page, so we return EOF on a readPage() error).
+Then we look at the next record, first we check if it satisfies the condtion, and then we copy the wanted attributes into *data using the correct recordDescriptor
+plus data format.
 
 4. Internal Record Format
 - Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that your team hasn't implemented this feature.
@@ -60,20 +65,27 @@ After we calculate the length of the varchar field, we just grab the bytes, just
 When we receive a record, if the incoming record attribute vector has a varchar type, then we read the first four bytes as an integer to determine the length of the data.
 
 - Describe how you deal with an update and delete.
-FILL_IN_HERE
+Delete removes the entire record from the page (and then compacts the other records, more details in Section 5). 
+Update removes the entire record and then inserts its (possibly on the same page, more details in Section 5).
 
 5. Page Format
 - Show your page format design.
 On a page, the last 2 bytes represents the free space pointer (offset that is a uint16_t byte offset within the page).
 The second to last 2 bytes on the page represents the number of records on the page (uint16_t count).
 After that, there are 4 byte entries corresponding to our directory for finding records on a page.
-The directory entries are ordered by slot number increasing and contain two bytes for the offset of a record within page (uint16_t) and two bytes 
+The directory entries are ordered by slot number increasing and contain two bytes for the offset of a record within page (int16_t) and two bytes 
 for the length of record (uint16_t)). Our page has records at the top, free space in the middle (pointed to by free space pointer), and our directory at the bottom.
 The directory grows from bottom up and the records grow from top to bottom so we make sure there is enough space so we don't overwrite anything.
 The rid slot num's begin with 1 and not with 0 (could easily be fixed, but there were no requirements on this).
 
 - Describe how you deal with an update and delete.
-FILL_IN_HERE
+Delete uses the RID to find offset and length of the record and then memmove(2) (not memcpy because of overlapping blocks) everything between offset and freeSpace.
+Then we walk through the directory and update all the offsets that were higher than the offset of the deleted record. Also we overwirte the directory entry of the 
+deleted records offset with (const int16_t deleted_entry = 0x8000;)
+Update calls delete and then tries to insert the new record into on the same page. If this succeds then we update directory entry. If it fails then we just call
+insertRecord and upate the directory entry on the original page to point to the new RID.
+To foreward to another RID we save -slotNum in the offset (which is a int16_t), and the pageNum in the length space (uint16_t). This allows 
+us to foreward to up to page 2^16 - 1 (therefore we are limited to a max file size of 2^16 * 4K = 256MB).
 
 6. File Format
 - Show your file format design
@@ -88,4 +100,6 @@ Created an external file table.stat that tracks the tables table current inserte
 catalog and create it when we create the catalog. This is documented above in meta data design last paragraph.
 
 8. Other (optional)
-- Freely use this section to tell us about things that are related to the project 2, but not related to the other sections (optional)
+In codebase/rm there is a file _rmtest.cc with in which we got rid of all the memory leak that was in the testscript (except the nullindicators in each test)
+Note: to be able to have no leaks you need to call a function to destroy the instance. Ours is called rm->DestroyInstance(), and this function actually destroys 
+all the underlying instances.

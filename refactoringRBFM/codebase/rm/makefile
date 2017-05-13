@@ -1,4 +1,4 @@
-include ../../makefile.inc
+include ../makefile.inc
 
 all: librm.a rmtest_create_tables rmtest_delete_tables rmtest
 
@@ -26,5 +26,5 @@ $(CODEROOT)/rbf/librbf.a:
 
 .PHONY: clean
 clean:
-	-rm rmtest_create_tables rmtest_delete_tables rmtest *.stat *.tbl *.a *.o *~ 
+	-rm rmtest_create_tables rmtest_delete_tables rmtest *.a *.o *~ 
 	$(MAKE) -C $(CODEROOT)/rbf clean
