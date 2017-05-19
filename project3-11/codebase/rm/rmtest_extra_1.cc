@@ -82,5 +82,5 @@ int main()
     rcmain = createTable("tbl_employee100");
     rcmain = RM_TEST_EXTRA_1("tbl_employee100", 14, name1, 24, 185, 10000);
 
-    return rcmain;
+    return 1;
 }

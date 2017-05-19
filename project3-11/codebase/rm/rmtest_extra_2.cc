@@ -74,5 +74,5 @@ int main()
     // Add Attributes
     rcmain = RM_TEST_EXTRA_2("tbl_employee200", 7, name2, 22, 180, 6000, 123479765);
 
-    return rcmain;
+    return 0;
 }
