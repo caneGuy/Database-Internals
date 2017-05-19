@@ -11,6 +11,19 @@
 class IX_ScanIterator;
 class IXFileHandle;
 
+struct nodeHeader {
+    uint8_t leaf;
+    uint16_t freeSpace;
+    uint16_t left;
+    uint16_t right;
+}
+
+struct intEntry {
+    uint16_t left;
+    int value;
+    uint16_t right;
+}
+
 class IndexManager {
 
     public:
@@ -75,21 +88,24 @@ class IX_ScanIterator {
 
 class IXFileHandle {
     public:
+    
+        FileHandle *_fileHandle;
 
-    // variables to keep counter for each operation
-    unsigned ixReadPageCounter;
-    unsigned ixWritePageCounter;
-    unsigned ixAppendPageCounter;
+        // variables to keep counter for each operation
+        unsigned ixReadPageCounter;
+        unsigned ixWritePageCounter;
+        unsigned ixAppendPageCounter;
 
-    // Constructor
-    IXFileHandle();
+        // Constructor
+        IXFileHandle();
 
-    // Destructor
-    ~IXFileHandle();
+        // Destructor
+        ~IXFileHandle();
 
-	// Put the current counter values of associated PF FileHandles into variables
-	RC collectCounterValues(unsigned &readPageCount, unsigned &writePageCount, unsigned &appendPageCount);
-
+        // Put the current counter values of associated PF FileHandles into variables
+        RC collectCounterValues(unsigned &readPageCount, unsigned &writePageCount, unsigned &appendPageCount);
+    
+ 
 };
 
 #endif

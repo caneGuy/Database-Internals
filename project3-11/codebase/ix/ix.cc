@@ -21,6 +21,7 @@ IndexManager::~IndexManager()
 
 RC IndexManager::createFile(const string &fileName)
 {
+    
     return -1;
 }
 
@@ -85,6 +86,8 @@ RC IX_ScanIterator::close()
 
 IXFileHandle::IXFileHandle()
 {
+    _fileHandle = new FileHandle();
+    
     ixReadPageCounter = 0;
     ixWritePageCounter = 0;
     ixAppendPageCounter = 0;
@@ -96,6 +99,7 @@ IXFileHandle::~IXFileHandle()
 
 RC IXFileHandle::collectCounterValues(unsigned &readPageCount, unsigned &writePageCount, unsigned &appendPageCount)
 {
-    return -1;
+    _fileHandle->collectCounterValues(&ixReadPageCounter, &ixWritePageCounter, &ixAppendPageCounter);
+    return 0;
 }
 
