@@ -6,16 +6,19 @@
 
 #include "../rbf/rbfm.h"
 
-# define IX_EOF (-1)  // end of the index scan
+#define IX_EOF (-1)  // end of the index scan
+#define ROOT_PAGE (0) 
 
 class IX_ScanIterator;
 class IXFileHandle;
 
 struct nodeHeader {
     uint8_t leaf;
+    uint16_t pageNum;
     uint16_t freeSpace;
     uint16_t left;
     uint16_t right;
+    uint16_t parent;
 }
 
 struct intEntry {
