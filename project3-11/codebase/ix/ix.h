@@ -21,10 +21,20 @@ struct nodeHeader {
     uint16_t parent;
 }
 
-struct intEntry {
+// to your left there is less or equal
+// to your right ther is strictly greater
+
+struct interiorEntry {
     uint16_t left;
-    int value;
     uint16_t right;
+    Attribute attribute;
+    char[PAGE_SIZE] key;
+}
+
+struct leafEntry {
+    Attribute attribute;
+    char[PAGE_SIZE] key;
+    RID rid;
 }
 
 class IndexManager {
