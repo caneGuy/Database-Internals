@@ -25,6 +25,12 @@ RC IndexManager::createFile(const string &fileName)
 {
     int rc = _pf_manager->createFile(fileName);
     if(rc != 0) return -1;
+        
+    
+    // ***************************************************
+    // change this to having only one leaf page as root
+    // ***************************************************  
+    
 
     struct nodeHeader header;
     header.leaf = 0;
@@ -197,12 +203,19 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
     ixfileHandle._fileHandle->appendPage(page2);
     free(page);
     free(page2);
+    
+    
     // insert new trafficCup into parent
+    
+    // ***************************************************
+    // if this is the root page do split root page routine
+    // ***************************************************    
+    
     pageStack.pop_back();
     insertToInterior(ixfileHandle, attribute, entry.key, pageNum, page2Header.pageNum, pageStack);
     // then try to insert again
     // this could be optimised but it is easier for now
-    // and it should never cause another split on the second attemt
+    // and it should never cause another split on the second attempt
     return insertEntry(ixfileHandle, attribute, key, rid);      
     
 }
@@ -271,23 +284,9 @@ RC IndexManager::deleteEntry(IXFileHandle &ixfileHandle, const Attribute &attrib
     return -1;
 }
 
-
-RC IndexManager::scan(IXFileHandle &ixfileHandle,
-        const Attribute &attribute,
-        const void      *lowKey,
-        const void      *highKey,
-        bool			lowKeyInclusive,
-        bool        	highKeyInclusive,
-        IX_ScanIterator &ix_ScanIterator)
-{
-    return -1;
-}
-
 void IndexManager::printBtree(IXFileHandle &ixfileHandle, const Attribute &attribute) const
 {
-
     print_rec(0, ROOT_PAGE, ixfileHandle, attribute);
-
 }
 
 void IndexManager::print_rec(uint16_t depth, uint16_t pageNum, IXFileHandle &ixfileHandle, const Attribute &attribute) const {
@@ -389,7 +388,6 @@ void IndexManager::printKey(const Attribute& attribute, void* key) const {
     
 }
 
-
 struct interiorEntry IndexManager::nextInteriorEntry(char* page, Attribute attribute, uint16_t &offset) const {
     
     struct interiorEntry entry;
@@ -466,6 +464,18 @@ RC IndexManager::isKeySmaller(const Attribute &attribute, const void* pageEntryK
             return -1;
     }
     
+}
+
+
+RC IndexManager::scan(IXFileHandle &ixfileHandle,
+        const Attribute &attribute,
+        const void      *lowKey,
+        const void      *highKey,
+        bool			lowKeyInclusive,
+        bool        	highKeyInclusive,
+        IX_ScanIterator &ix_ScanIterator)
+{
+    return -1;
 }
 
 
