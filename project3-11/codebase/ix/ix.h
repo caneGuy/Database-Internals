@@ -3,6 +3,9 @@
 
 #include <vector>
 #include <string>
+#include <cstdint>
+#include <cstring>
+#include <iostream>
 
 #include "../rbf/rbfm.h"
 
@@ -18,8 +21,7 @@ struct nodeHeader {
     uint16_t freeSpace;
     uint16_t left;
     uint16_t right;
-    uint16_t parent;
-}
+};
 
 // to your left there is less or equal
 // to your right ther is strictly greater
@@ -28,14 +30,14 @@ struct interiorEntry {
     uint16_t left;
     uint16_t right;
     Attribute attribute;
-    char[PAGE_SIZE] key;
-}
+    char key[PAGE_SIZE];
+};
 
 struct leafEntry {
     Attribute attribute;
-    char[PAGE_SIZE] key;
+    char key[PAGE_SIZE];
     RID rid;
-}
+};
 
 class IndexManager {
 
@@ -78,6 +80,19 @@ class IndexManager {
 
     private:
         static IndexManager *_index_manager;
+        static PagedFileManager *_pf_manager;
+        
+        
+        RC insertRec(IXFileHandle &ixfileHandle, const Attribute &attribute, const void *key, const RID &rid, vector<uint16_t> pageStack);
+        RC insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attribute, const void* const key, RID rid, vector<uint16_t> pageStack);
+        RC insertToInterior(IXFileHandle &ixfileHandle, const Attribute &attribute, const void* key, uint16_t oldPage, uint16_t newPage, vector<uint16_t> pageStack); 
+        void print_rec(uint16_t depth, uint16_t pageNum, IXFileHandle &ixfileHandle, const Attribute &attribute) const;
+        struct interiorEntry nextInteriorEntry(char* page, Attribute attribute, uint16_t &offset) const;
+        struct leafEntry nextLeafEntry(char* page, Attribute attribute, uint16_t &offset) const; 
+        uint16_t getSize(const Attribute &attribute, const void* key) const;
+        RC isKeySmaller(const Attribute &attribute, const void* pageEntryKey, const void* key);
+        void printLeafEntry(struct leafEntry entry) const;
+        void printKey(const Attribute& attribute, void* key) const;
 };
 
 
