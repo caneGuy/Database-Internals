@@ -24,7 +24,7 @@ struct nodeHeader {
 };
 
 // to your left there is less or equal
-// to your right ther is strictly greater
+// to your right there is strictly greater
 
 struct interiorEntry {
     uint16_t left;
@@ -37,6 +37,7 @@ struct leafEntry {
     Attribute attribute;
     char key[PAGE_SIZE];
     RID rid;
+    uint16_t sizeOnPage;
 };
 
 class IndexManager {
@@ -93,6 +94,8 @@ class IndexManager {
         RC isKeySmaller(const Attribute &attribute, const void* pageEntryKey, const void* key);
         void printLeafEntry(struct leafEntry entry) const;
         void printKey(const Attribute& attribute, void* key) const;
+        RC createNewRoot(IXFileHandle &ixfileHandle, const Attribute &attribute, const void* key, uint16_t page2Num);
+        void hexdump(const void *ptr, int buflen);
 };
 
 

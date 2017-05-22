@@ -23,50 +23,7 @@ IndexManager::~IndexManager()
 
 RC IndexManager::createFile(const string &fileName)
 {
-    int rc = _pf_manager->createFile(fileName);
-    if(rc != 0) return -1;
-        
-    
-    // ***************************************************
-    // change this to having only one leaf page as root
-    // ***************************************************  
-    
-
-    struct nodeHeader header;
-    header.leaf = 0;
-    header.pageNum = 0;
-    header.freeSpace = sizeof(struct nodeHeader) + sizeof(uint16_t);
-    header.left = -1;
-    header.right = -1;
-    
-    uint16_t dummy = 1;
-    
-    char *data = (char*)malloc(PAGE_SIZE);
-    memcpy(data, &header, sizeof(struct nodeHeader));
-    memcpy(data + sizeof(struct nodeHeader), &dummy, sizeof(uint16_t));
-    
-    FileHandle handle;
-    if (_pf_manager->openFile(fileName.c_str(), handle))
-        return RBFM_OPEN_FAILED;
-    if (handle.appendPage(data))
-        return RBFM_APPEND_FAILED; 
-
-    header.leaf = 1;
-    header.pageNum = 1;
-    header.freeSpace = sizeof(struct nodeHeader);
-    header.left = -1;
-    header.right = -1;
-    
-    memcpy(data, &header, sizeof(struct nodeHeader));
-    
-    if (handle.appendPage(data))
-        return RBFM_APPEND_FAILED; 
-    
-    _pf_manager->closeFile(handle);
-
-    free(data);
-
-    return SUCCESS;
+    return _pf_manager->createFile(fileName);;
 }
 
 RC IndexManager::destroyFile(const string &fileName)
@@ -86,10 +43,23 @@ RC IndexManager::closeFile(IXFileHandle &ixfileHandle)
 
 RC IndexManager::insertEntry(IXFileHandle &ixfileHandle, const Attribute &attribute, const void *key, const RID &rid)
 {    
+    // if file is empty create a root page (as a leaf page)
+    if (ixfileHandle._fileHandle->getNumberOfPages() == 0) {
+        struct nodeHeader header;
+        header.leaf = true;
+        header.pageNum = ROOT_PAGE;
+        header.freeSpace = sizeof(struct nodeHeader);
+        header.left = -1;
+        header.right = -1;        
+        char *data = (char*)malloc(PAGE_SIZE);
+        memcpy(data, &header, sizeof(struct nodeHeader));        
+        ixfileHandle._fileHandle->appendPage(data);
+        free(data);
+    }   
+    // init pageStack and make recursive call
     vector<uint16_t> pageStack;
-    pageStack.push_back(ROOT_PAGE);
-    insertRec(ixfileHandle, attribute, key, rid, pageStack);    
-    return 0;
+    pageStack.push_back(ROOT_PAGE);       
+    return insertRec(ixfileHandle, attribute, key, rid, pageStack); 
 }
 
 RC IndexManager::insertRec(IXFileHandle &ixfileHandle, const Attribute &attribute, const void *key, const RID &rid, vector<uint16_t> pageStack) {
@@ -141,7 +111,7 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
     uint16_t keySize = getSize(attribute, key);
     
     // normal insert
-    if (pageHeader.freeSpace + keySize + sizeof(RID) <= PAGE_SIZE) {        
+    if (pageHeader.freeSpace + keySize + sizeof(RID) <= PAGE_SIZE) {  
         uint16_t offset = sizeof(struct nodeHeader);   
         uint16_t last = offset;      
         struct leafEntry entry;
@@ -165,7 +135,7 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
         free(page);
         return 0;
     } 
-    
+
     // try to push one into sibling?
     // lowest priority for now
     
@@ -185,7 +155,17 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
     // walk through the page until we are about half way through the page
     while (offset - (sizeof(struct nodeHeader) / 2) < PAGE_SIZE / 2) {
         entry = nextLeafEntry(page, attribute, offset);
-    }    
+    }
+    size_t splitKeySize = getSize(attribute, entry.key);
+    char splitKey[splitKeySize];
+    memcpy(splitKey, entry.key, splitKeySize);
+    // hexdump(splitKey)
+    while (offset < PAGE_SIZE) {
+        entry = nextLeafEntry(page, attribute, offset);
+        if (memcmp(entry.key, splitKey, splitKeySize) != 0)
+            break;
+    }
+    offset -= entry.sizeOnPage;
     memcpy(page2 + sizeof(struct nodeHeader), page + offset, pageHeader.freeSpace - offset); 
     // set up headers
     struct nodeHeader page2Header;
@@ -201,23 +181,77 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
     memcpy(page2, &page2Header, sizeof(struct nodeHeader));
     ixfileHandle._fileHandle->writePage(pageNum, page);
     ixfileHandle._fileHandle->appendPage(page2);
+    
+    // cout << "new root header" << endl;      
+    // hexdump(page, PAGE_SIZE);   
+    // cout << "new other header" << endl;   
+    // hexdump(page2, PAGE_SIZE);
+    
     free(page);
-    free(page2);
+    free(page2);    
     
-    
-    // insert new trafficCup into parent
-    
-    // ***************************************************
-    // if this is the root page do split root page routine
-    // ***************************************************    
-    
-    pageStack.pop_back();
-    insertToInterior(ixfileHandle, attribute, entry.key, pageNum, page2Header.pageNum, pageStack);
+    // if root page split it else insert new trafficCup into parent  
+    if (pageNum == ROOT_PAGE) {
+        createNewRoot(ixfileHandle, attribute, entry.key, page2Header.pageNum);
+    } else {
+        pageStack.pop_back();
+        insertToInterior(ixfileHandle, attribute, entry.key, pageNum, page2Header.pageNum, pageStack);
+    }
     // then try to insert again
     // this could be optimised but it is easier for now
     // and it should never cause another split on the second attempt
     return insertEntry(ixfileHandle, attribute, key, rid);      
     
+}
+
+RC IndexManager::createNewRoot(IXFileHandle &ixfileHandle, const Attribute &attribute, const void* key, uint16_t page2Num) {
+    
+    char* newRoot = (char*)malloc(PAGE_SIZE);
+    char* oldRoot = (char*)malloc(PAGE_SIZE);
+    char* page2 = (char*)malloc(PAGE_SIZE);
+    
+    ixfileHandle._fileHandle->readPage(ROOT_PAGE, oldRoot);
+    ixfileHandle._fileHandle->readPage(page2Num, page2);
+    
+    struct nodeHeader oldRootHeader;
+    memcpy(&oldRootHeader, oldRoot, sizeof(struct nodeHeader));
+    struct nodeHeader page2Header;
+    memcpy(&page2Header, page2, sizeof(struct nodeHeader));
+    
+    oldRootHeader.pageNum = ixfileHandle._fileHandle->getNumberOfPages();
+    page2Header.left = oldRootHeader.pageNum;
+    cout << "new pageNum: " << oldRootHeader.pageNum << endl;
+    
+    struct nodeHeader newRootHeader;
+    
+    newRootHeader.leaf = 0;
+    newRootHeader.pageNum = ROOT_PAGE;
+    newRootHeader.left = -1;
+    newRootHeader.right = -1;
+    
+    uint16_t keySize = getSize(attribute, key);
+    uint16_t offset = sizeof(struct nodeHeader);
+    memcpy(newRoot + offset, &oldRootHeader.pageNum, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+    memcpy(newRoot + offset, key, keySize);
+    offset += keySize;
+    memcpy(newRoot + offset, &page2Num, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+    
+    newRootHeader.freeSpace = offset;
+    
+    memcpy(newRoot, &newRootHeader, sizeof(struct nodeHeader));
+    memcpy(oldRoot, &oldRootHeader, sizeof(struct nodeHeader));
+    memcpy(page2,   &page2Header,   sizeof(struct nodeHeader));
+    
+    ixfileHandle._fileHandle->writePage(ROOT_PAGE, newRoot);
+    ixfileHandle._fileHandle->writePage(page2Num, page2);
+    ixfileHandle._fileHandle->appendPage(oldRoot);
+    free(newRoot);
+    free(oldRoot);
+    free(page2);
+    
+    return 0;
 }
 
 
@@ -287,6 +321,7 @@ RC IndexManager::deleteEntry(IXFileHandle &ixfileHandle, const Attribute &attrib
 void IndexManager::printBtree(IXFileHandle &ixfileHandle, const Attribute &attribute) const
 {
     print_rec(0, ROOT_PAGE, ixfileHandle, attribute);
+    cout << endl;
 }
 
 void IndexManager::print_rec(uint16_t depth, uint16_t pageNum, IXFileHandle &ixfileHandle, const Attribute &attribute) const {
@@ -407,8 +442,9 @@ struct leafEntry IndexManager::nextLeafEntry(char* page, Attribute attribute, ui
     entry.attribute = attribute;
     uint16_t size = getSize(attribute, page + offset);    
     memcpy(&entry.key, page + offset, size);
-    memcpy(&entry.rid, page + offset + size, sizeof(RID));
-    offset += size + sizeof(RID);
+    memcpy(&entry.rid, page + offset + size, sizeof(RID));    
+    entry.sizeOnPage = size + sizeof(RID);
+    offset += entry.sizeOnPage;
     return entry;
     
 }
@@ -465,6 +501,25 @@ RC IndexManager::isKeySmaller(const Attribute &attribute, const void* pageEntryK
     }
     
 }
+
+void IndexManager::hexdump(const void *ptr, int buflen) {
+  unsigned char *buf = (unsigned char*)ptr;
+  int i, j;
+  for (i=0; i<buflen; i+=16) {
+    printf("%06x: ", i);
+    for (j=0; j<16; j++) 
+      if (i+j < buflen)
+        printf("%02x ", buf[i+j]);
+      else
+        printf("   ");
+    printf(" ");
+    for (j=0; j<16; j++) 
+      if (i+j < buflen)
+        printf("%c", isprint(buf[i+j]) ? buf[i+j] : '.');
+    printf("\n");
+  }
+}
+
 
 
 RC IndexManager::scan(IXFileHandle &ixfileHandle,
@@ -532,4 +587,3 @@ RC IXFileHandle::collectCounterValues(unsigned &readPageCount, unsigned &writePa
 
     return 0;
 }
-
