@@ -11,13 +11,14 @@
 
 #define IX_EOF (-1)  // end of the index scan
 #define ROOT_PAGE (0) 
-#define NO_PAGE (65535)
+#define NO_PAGE (0xffff)
+#define DELETED_ENTRY (0x8000) // this isn't a valid slotNum anyways due to the rbfm implemention
 
 class IX_ScanIterator;
 class IXFileHandle;
 
 struct nodeHeader {
-    uint8_t leaf;
+    uint16_t leaf;
     uint16_t pageNum;
     uint16_t freeSpace;
     uint16_t left;
@@ -96,7 +97,7 @@ class IndexManager {
         struct leafEntry nextLeafEntry(char* page, Attribute attribute, uint16_t &offset) const; 
         uint16_t getSize(const Attribute &attribute, const void* key) const;
         void printLeafEntry(struct leafEntry entry) const;
-        void printKey(const Attribute& attribute, void* key) const;
+        void printKey(const Attribute& attribute, const void* key) const;
         RC createNewRoot(IXFileHandle &ixfileHandle, const Attribute &attribute, const void* key, uint16_t page2Num);
         void hexdump(const void *ptr, int buflen);
 };
@@ -124,8 +125,8 @@ class IX_ScanIterator {
     public:
         IXFileHandle *ixfileHandle;
         Attribute attribute;
-        void *lowKey;
-        void *highKey;
+        const void *lowKey;
+        const void *highKey;
         bool lowKeyInclusive;
         bool highKeyInclusive;
         void* page;

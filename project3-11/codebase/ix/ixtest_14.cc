@@ -13,7 +13,7 @@ void prepareKeyAndRid(const unsigned count, const unsigned i, char* key, RID &ri
     *(int *)key = count;
     for(unsigned j = 0; j < count; j++)
     {
-        key[4 + j] = 'a' + i%24 - 1;
+        key[4 + j] = 'B' + i%60 - 1;
     }
     rid.pageNum = i;
     rid.slotNum = i;
@@ -53,7 +53,7 @@ int testCase_14(const string &indexFileName,
     RID rid;
     IXFileHandle ixfileHandle;
     IX_ScanIterator ix_ScanIterator;
-    unsigned numOfTuples = 200;
+    unsigned numOfTuples = 241;
     char key[PAGE_SIZE];
     unsigned count = attribute.length;
 
