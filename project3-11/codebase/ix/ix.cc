@@ -159,9 +159,9 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
         entry = nextLeafEntry(page, attribute, offset);
         if (memcmp(entry.key, splitKey, splitKeySize) != 0) {
             found = true;
-            cout << "found something to split on (first try)" << endl;
-            hexdump(splitKey, splitKeySize);
-            hexdump(entry.key, 4);
+            // cout << "found something to split on (first try)" << endl;
+            // hexdump(splitKey, splitKeySize);
+            // hexdump(entry.key, 4);
             break;
         }
     }
@@ -363,6 +363,29 @@ RC IndexManager::deleteEntry(IXFileHandle &ixfileHandle, const Attribute &attrib
 
 void IndexManager::printBtree(IXFileHandle &ixfileHandle, const Attribute &attribute) const
 {
+    
+        
+    // char* page = (char*)malloc(PAGE_SIZE);
+    // ixfileHandle._fileHandle->readPage(0, page);
+    
+  // unsigned char *buf = (unsigned char*)page;
+  // int i, j;
+  // for (i=0; i<PAGE_SIZE; i+=16) {
+    // printf("%06x: ", i);
+    // for (j=0; j<16; j++) 
+      // if (i+j < PAGE_SIZE)
+        // printf("%02x ", buf[i+j]);
+      // else
+        // printf("   ");
+    // printf(" ");
+    // for (j=0; j<16; j++) 
+      // if (i+j < PAGE_SIZE)
+        // printf("%c", isprint(buf[i+j]) ? buf[i+j] : '.');
+    // printf("\n");
+  // }   
+    
+  // free(page);
+    
     print_rec(0, ROOT_PAGE, ixfileHandle, attribute);
     cout << endl;
 }
@@ -418,7 +441,7 @@ void IndexManager::print_rec(uint16_t depth, uint16_t pageNum, IXFileHandle &ixf
             cout << "," << endl;
         }
         print_rec(depth + 1, entry.right, ixfileHandle, attribute);
-        cout << string(depth * 4, ' ') << endl << "]}" << endl;
+        cout << endl << string(depth * 4, ' ') << "]}";
         
     }
     
@@ -440,8 +463,12 @@ void IndexManager::printKey(const Attribute& attribute, void* key) const {
         {
             int size;
             memcpy(&size, key, sizeof(int));
+            // cout << endl << size << endl;
+            // cout << endl;
+            // hexdump(key, size);
             char string[size + 1];
-            memcpy(string, key, size);
+            memcpy(string, (char*)key + 4, size);
+            size = 10;
             string[size] = 0;
             cout << string;
             break;

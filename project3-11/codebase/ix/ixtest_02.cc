@@ -48,8 +48,8 @@ int testCase_2(const string &indexFileName, const Attribute &attribute)
     cerr << endl << "Before Insert - R W A: " << readPageCount << " " <<  writePageCount << " " << appendPageCount << endl;
 
     // insert entry
-    for(int i=0; i<1100; ++i) {
-        int key = i*7%3;
+    for(int i=0; i<90000; ++i) {
+        int key = i*7%600;
         rid.pageNum = i;
         rid.slotNum = i+2;
         rc = indexManager->insertEntry(ixfileHandle, attribute, &key, rid);

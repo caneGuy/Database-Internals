@@ -13,10 +13,28 @@ void prepareKeyAndRid(const unsigned count, const unsigned i, char* key, RID &ri
     *(int *)key = count;
     for(unsigned j = 0; j < count; j++)
     {
-        key[4 + j] = 'a' + i - 1;
+        key[4 + j] = 'a' + i%24 - 1;
     }
     rid.pageNum = i;
     rid.slotNum = i;
+}
+
+void hexdump(const void *ptr, int buflen) {
+  unsigned char *buf = (unsigned char*)ptr;
+  int i, j;
+  for (i=0; i<buflen; i+=16) {
+    printf("%06x: ", i);
+    for (j=0; j<16; j++) 
+      if (i+j < buflen)
+        printf("%02x ", buf[i+j]);
+      else
+        printf("   ");
+    printf(" ");
+    for (j=0; j<16; j++) 
+      if (i+j < buflen)
+        printf("%c", isprint(buf[i+j]) ? buf[i+j] : '.');
+    printf("\n");
+  }
 }
 
 int testCase_14(const string &indexFileName,
@@ -35,7 +53,7 @@ int testCase_14(const string &indexFileName,
     RID rid;
     IXFileHandle ixfileHandle;
     IX_ScanIterator ix_ScanIterator;
-    unsigned numOfTuples = 13;
+    unsigned numOfTuples = 200;
     char key[PAGE_SIZE];
     unsigned count = attribute.length;
 
