@@ -11,6 +11,7 @@
 
 #define IX_EOF (-1)  // end of the index scan
 #define ROOT_PAGE (0) 
+#define NO_PAGE (65535)
 
 class IX_ScanIterator;
 class IXFileHandle;
@@ -123,8 +124,8 @@ class IX_ScanIterator {
     public:
         IXFileHandle *ixfileHandle;
         Attribute attribute;
-        const void *lowKey;
-        const void *highKey;
+        void *lowKey;
+        void *highKey;
         bool lowKeyInclusive;
         bool highKeyInclusive;
         void* page;

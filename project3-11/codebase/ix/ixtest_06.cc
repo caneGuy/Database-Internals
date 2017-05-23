@@ -60,15 +60,20 @@ int testCase_6(const string &indexFileName, const Attribute &attribute)
     {
         count++;
 
-        if (rid.pageNum % 200 == 0) {
+        if (rid.pageNum % 100 == 0) {
             cerr << count << " - Returned rid: " << rid.pageNum << " " << rid.slotNum << endl;
         }
         outRidSlotNumSum += rid.slotNum;
     }
+    
+    // indexManager->printBtree(ixfileHandle, attribute);
 
     // Inconsistency between insert and scan?
     if (inRidSlotNumSum != outRidSlotNumSum)
     {
+        
+        cout << inRidSlotNumSum << endl;
+        cout << outRidSlotNumSum << endl;
         cerr << "Wrong entries output... The test failed." << endl;
         rc = ix_ScanIterator.close();
         rc = indexManager->closeFile(ixfileHandle);
