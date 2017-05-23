@@ -102,34 +102,36 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
     
     uint16_t pageNum = pageStack.back();
     
-    char* page = (char*)malloc(PAGE_SIZE);
+    // Note 2 * PAGE_SIZE
+    char* page = (char*)malloc(2 * PAGE_SIZE);
     ixfileHandle._fileHandle->readPage(pageNum, page);
     
     struct nodeHeader pageHeader;
     memcpy(&pageHeader, page, sizeof(struct nodeHeader));
     
-    uint16_t keySize = getSize(attribute, key);
-    
-    // normal insert
-    if (pageHeader.freeSpace + keySize + sizeof(RID) <= PAGE_SIZE) {  
-        uint16_t offset = sizeof(struct nodeHeader);   
-        uint16_t last = offset;      
-        struct leafEntry entry;
-        // walk through the page until key is not smaller any more 
-        // or we reached the last entry 
-        while (pageHeader.freeSpace > offset) {
-            entry = nextLeafEntry(page, attribute, offset);
-            if (not isKeySmaller(attribute, entry.key, key))
-                break;
-            last = offset;
-        }
-        // memmove the entries that are not smaller than key
-        // memcpy in the key and rid
-        memmove(page + last + keySize + sizeof(RID), page + last, pageHeader.freeSpace - last);
-        memcpy(page + last, key, keySize);
-        memcpy(page + last + keySize, &rid, sizeof(RID));
-        // update pageHeader
-        pageHeader.freeSpace += keySize + sizeof(RID);
+    // always insert key into page
+    uint16_t keySize = getSize(attribute, key);    
+    uint16_t offset = sizeof(struct nodeHeader);   
+    uint16_t last = offset;      
+    struct leafEntry entry;
+    // walk through the page until key is not smaller any more 
+    // or we reached the last entry 
+    while (pageHeader.freeSpace > offset) {
+        entry = nextLeafEntry(page, attribute, offset);
+        if (not isKeySmaller(attribute, entry.key, key))
+            break;
+        last = offset;
+    }
+    // memmove the entries that are not smaller than key
+    // memcpy in the key and rid
+    memmove(page + last + keySize + sizeof(RID), page + last, pageHeader.freeSpace - last);
+    memcpy(page + last, key, keySize);
+    memcpy(page + last + keySize, &rid, sizeof(RID));
+    // update pageHeader
+    pageHeader.freeSpace += keySize + sizeof(RID);
+        
+    // normal insert (if it still fits into one page)
+    if (pageHeader.freeSpace <= PAGE_SIZE) {  
         memcpy(page, &pageHeader, sizeof(struct nodeHeader));
         ixfileHandle._fileHandle->writePage(pageNum, page);
         free(page);
@@ -140,32 +142,55 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
     // lowest priority for now
     
     
-    // split node   
-    
-    // set up new header, and update the other one
-    // walk down the list until approximatly in the middle
-    // copy half of the data into the new page (don't forget to update freeSpace)
-    // last entry on left page will be trafficCup
-    // overwrite page, append page2 (remember "page2Num")
-    // call inserts
-    
+    // split node (if it doesn't fit into one page)    
     char* page2 = (char*)malloc(PAGE_SIZE);    
-    uint16_t offset = sizeof(struct nodeHeader);     
-    struct leafEntry entry;
+    offset = sizeof(struct nodeHeader);
     // walk through the page until we are about half way through the page
     while (offset - (sizeof(struct nodeHeader) / 2) < PAGE_SIZE / 2) {
         entry = nextLeafEntry(page, attribute, offset);
     }
-    size_t splitKeySize = getSize(attribute, entry.key);
+    
+    /////// This code makes sure that we only split on keys that are different
+    bool found = false;
+    uint16_t splitKeySize = getSize(attribute, entry.key);
     char splitKey[splitKeySize];
     memcpy(splitKey, entry.key, splitKeySize);
-    // hexdump(splitKey)
-    while (offset < PAGE_SIZE) {
+    while (offset < pageHeader.freeSpace) {
         entry = nextLeafEntry(page, attribute, offset);
-        if (memcmp(entry.key, splitKey, splitKeySize) != 0)
+        if (memcmp(entry.key, splitKey, splitKeySize) != 0) {
+            found = true;
+            cout << "found something to split on (first try)" << endl;
+            hexdump(splitKey, splitKeySize);
+            hexdump(entry.key, 4);
             break;
+        }
     }
-    offset -= entry.sizeOnPage;
+    if (not found) {
+        char newSplitKey[PAGE_SIZE];
+        offset = sizeof(struct nodeHeader);
+        while (offset < pageHeader.freeSpace) {
+            entry = nextLeafEntry(page, attribute, offset);
+            if (memcmp(entry.key, splitKey, splitKeySize) == 0) {
+                break;
+            }
+            memcpy(newSplitKey, entry.key, getSize(attribute, entry.key));
+        }
+        if (offset - entry.sizeOnPage == sizeof(struct nodeHeader)) {
+            cerr << "ERROR: There are too many entries with the same key!" << endl;
+            cerr << "That is not supported by this index class." << endl;
+            free(page);
+            free(page2);  
+            return -1;
+        } 
+        offset -= entry.sizeOnPage;
+        memcpy(entry.key, newSplitKey, getSize(attribute, newSplitKey));
+    } else {
+        offset -= entry.sizeOnPage;
+        memcpy(entry.key, splitKey, splitKeySize);
+    }
+    /////// This code END
+    
+    // copy part of the page into the new page
     memcpy(page2 + sizeof(struct nodeHeader), page + offset, pageHeader.freeSpace - offset); 
     // set up headers
     struct nodeHeader page2Header;
@@ -180,28 +205,104 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
     memcpy(page, &pageHeader, sizeof(struct nodeHeader));
     memcpy(page2, &page2Header, sizeof(struct nodeHeader));
     ixfileHandle._fileHandle->writePage(pageNum, page);
-    ixfileHandle._fileHandle->appendPage(page2);
-    
-    // cout << "new root header" << endl;      
-    // hexdump(page, PAGE_SIZE);   
-    // cout << "new other header" << endl;   
-    // hexdump(page2, PAGE_SIZE);
-    
+    ixfileHandle._fileHandle->appendPage(page2);    
     free(page);
     free(page2);    
     
     // if root page split it else insert new trafficCup into parent  
+    RC rc;
     if (pageNum == ROOT_PAGE) {
-        createNewRoot(ixfileHandle, attribute, entry.key, page2Header.pageNum);
+        rc = createNewRoot(ixfileHandle, attribute, entry.key, page2Header.pageNum);
     } else {
         pageStack.pop_back();
-        insertToInterior(ixfileHandle, attribute, entry.key, pageNum, page2Header.pageNum, pageStack);
+        rc = insertToInterior(ixfileHandle, attribute, entry.key, pageNum, page2Header.pageNum, pageStack);
     }
-    // then try to insert again
-    // this could be optimised but it is easier for now
-    // and it should never cause another split on the second attempt
-    return insertEntry(ixfileHandle, attribute, key, rid);      
+    return rc;     
+}
+
+
+RC IndexManager::insertToInterior(IXFileHandle &ixfileHandle, const Attribute &attribute, const void* key, uint16_t oldPage, uint16_t newPage, vector<uint16_t> pageStack) {
     
+    uint16_t pageNum = pageStack.back();
+    
+    // Note 2 * PAGE_SIZE
+    char* page = (char*)malloc(2 * PAGE_SIZE);
+    ixfileHandle._fileHandle->readPage(pageNum, page);
+    
+    struct nodeHeader pageHeader;
+    memcpy(&pageHeader, page, sizeof(struct nodeHeader));
+    
+    uint16_t keySize = getSize(attribute, key);    
+      
+    // find correct spot by walking down the list
+    // then insert (memmove) key, page2Num
+    // update header        
+    uint16_t offset = sizeof(struct nodeHeader);    
+    struct interiorEntry entry;
+    // walk through the page until key is not smaller any more 
+    // or we reached the last entry 
+    uint16_t dummy;
+    memcpy(&dummy, page + offset, sizeof(uint16_t));
+    if (dummy != oldPage) {
+        while (pageHeader.freeSpace > offset + sizeof(uint16_t)) {
+            entry = nextInteriorEntry(page, attribute, offset);
+            if (entry.right == oldPage)
+                break;
+        }
+    }
+    // now offset points at the "oldPage" pointer
+    // and we want to insert the key, and a pointer to "newPage" right behind this pointer
+    offset += sizeof(uint16_t);
+    memmove(page + offset + keySize + sizeof(uint16_t), page + offset, pageHeader.freeSpace - offset);
+    memcpy(page + offset, key, keySize);
+    memcpy(page + offset + keySize, &newPage, sizeof(uint16_t));
+    pageHeader.freeSpace += keySize + sizeof(uint16_t);   
+    memcpy(page, &pageHeader, sizeof(struct nodeHeader));
+    
+    // normal insert
+    if (pageHeader.freeSpace + keySize + sizeof(uint16_t) <= PAGE_SIZE) {  
+        ixfileHandle._fileHandle->writePage(pageNum, page);
+        free(page);
+        return 0;
+    }    
+    
+    // split node (if it doesn't fit into one page)    
+    char* page2 = (char*)malloc(PAGE_SIZE);    
+    offset = sizeof(struct nodeHeader);
+    // walk through the page until we are about half way through the page
+    while (offset - (sizeof(struct nodeHeader) / 2) < PAGE_SIZE / 2) {
+        entry = nextInteriorEntry(page, attribute, offset);
+    }
+    // copy part of the page into the new page
+    // begin with pointer after entry.key
+    memcpy(page2 + sizeof(struct nodeHeader), page + offset, pageHeader.freeSpace - offset); 
+    // set up headers
+    struct nodeHeader page2Header;
+    page2Header.freeSpace = sizeof(struct nodeHeader) + pageHeader.freeSpace - offset;
+    // page ends now with the pointer that was right before enty.key
+    pageHeader.freeSpace = offset - getSize(attribute, entry.key);
+    page2Header.leaf = false;
+    page2Header.pageNum = ixfileHandle._fileHandle->getNumberOfPages();
+    page2Header.left = pageHeader.pageNum;
+    page2Header.right = pageHeader.right;
+    pageHeader.right = page2Header.pageNum;
+    // write new headers
+    memcpy(page, &pageHeader, sizeof(struct nodeHeader));
+    memcpy(page2, &page2Header, sizeof(struct nodeHeader));
+    ixfileHandle._fileHandle->writePage(pageNum, page);
+    ixfileHandle._fileHandle->appendPage(page2);    
+    free(page);
+    free(page2);
+        
+    // if root page split it else insert new trafficCup into parent  
+    RC rc;
+    if (pageNum == ROOT_PAGE) {
+        rc = createNewRoot(ixfileHandle, attribute, entry.key, page2Header.pageNum);
+    } else {
+        pageStack.pop_back();
+        rc = insertToInterior(ixfileHandle, attribute, entry.key, pageNum, page2Header.pageNum, pageStack);
+    }
+    return rc;          
 }
 
 RC IndexManager::createNewRoot(IXFileHandle &ixfileHandle, const Attribute &attribute, const void* key, uint16_t page2Num) {
@@ -220,7 +321,7 @@ RC IndexManager::createNewRoot(IXFileHandle &ixfileHandle, const Attribute &attr
     
     oldRootHeader.pageNum = ixfileHandle._fileHandle->getNumberOfPages();
     page2Header.left = oldRootHeader.pageNum;
-    cout << "new pageNum: " << oldRootHeader.pageNum << endl;
+    // cout << "new pageNum: " << oldRootHeader.pageNum << endl;
     
     struct nodeHeader newRootHeader;
     
@@ -252,64 +353,6 @@ RC IndexManager::createNewRoot(IXFileHandle &ixfileHandle, const Attribute &attr
     free(page2);
     
     return 0;
-}
-
-
-RC IndexManager::insertToInterior(IXFileHandle &ixfileHandle, const Attribute &attribute, const void* key, uint16_t oldPage, uint16_t newPage, vector<uint16_t> pageStack) {
-    
-    uint16_t pageNum = pageStack.back();
-    
-    char* page = (char*)malloc(PAGE_SIZE);
-    ixfileHandle._fileHandle->readPage(pageNum, page);
-    
-    struct nodeHeader pageHeader;
-    memcpy(&pageHeader, page, sizeof(struct nodeHeader));
-    
-    uint16_t keySize = getSize(attribute, key);
-    
-    // normal insert
-    if (pageHeader.freeSpace + keySize + sizeof(uint16_t) <= PAGE_SIZE) {        
-        // find correct spot by walking down the list
-        // then insert (memmove) key, page2Num
-        // update header        
-        uint16_t offset = sizeof(struct nodeHeader);    
-        struct interiorEntry entry;
-        // walk through the page until key is not smaller any more 
-        // or we reached the last entry 
-        uint16_t dummy;
-        memcpy(&dummy, page + offset, sizeof(uint16_t));
-        if (dummy != oldPage) {
-            while (pageHeader.freeSpace > offset + sizeof(uint16_t)) {
-                entry = nextInteriorEntry(page, attribute, offset);
-                if (entry.right == oldPage)
-                    break;
-            }
-        }
-        // now offset points at the "oldPage" pointer
-        // and we want to insert the key, and a pointer to "newPage" right behind this pointer
-        offset += sizeof(uint16_t);
-        memmove(page + offset + keySize + sizeof(uint16_t), page + offset, pageHeader.freeSpace - offset);
-        memcpy(page + offset, key, keySize);
-        memcpy(page + offset + keySize, &newPage, sizeof(uint16_t));
-        pageHeader.freeSpace += keySize + sizeof(uint16_t);   
-        memcpy(page, &pageHeader, sizeof(struct nodeHeader));
-        ixfileHandle._fileHandle->writePage(pageNum, page);
-        free(page);
-        return 0;
-    }    
-
-    cout << "ERROR: spliting an interor Node not yet implemented" << endl;
-    return -1;
-    
-    
-    // split node
-    // if coded properly we might be able to use almost the same code in insertToLeaf
-    // note: there will be a recursive call to insertToInterior()
-    // need to catch special case, if we want to split the root
-    // root has to stay at page 0
-    // so append both halves of the root node at the end of the file
-    // set up new root page with one trafficCup and save it at page 0
-    
 }
 
 

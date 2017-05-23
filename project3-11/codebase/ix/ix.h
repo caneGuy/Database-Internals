@@ -99,6 +99,24 @@ class IndexManager {
 };
 
 
+    // don't delete this yet pls
+    // set up new header, and update the other one
+    // walk down the list until approximatly in the middle
+    // copy half of the data into the new page (don't forget to update freeSpace)
+    // last entry on left page will be trafficCup
+    // overwrite page, append page2 (remember "page2Num")
+    // call inserts
+    
+    
+    // split node
+    // if coded properly we might be able to use almost the same code in insertToLeaf
+    // note: there will be a recursive call to insertToInterior()
+    // need to catch special case, if we want to split the root
+    // root has to stay at page 0
+    // so append both halves of the root node at the end of the file
+    // set up new root page with one trafficCup and save it at page 0
+
+
 class IX_ScanIterator {
     public:
 
