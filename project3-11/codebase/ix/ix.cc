@@ -545,6 +545,60 @@ RC IndexManager::isKeySmaller(const Attribute &attribute, const void* pageEntryK
     
 }
 
+RC IndexManager::keyCompare(const Attribute &attr, const void* pageKey, const void* lowKey, const void* highKey, bool lowInc, bool highInc) {   
+    if(isKeySmaller(attr, pageKey, lowKey))
+        return -1;
+
+    if(!lowInc && isKeyEqual(attr, pageKey, lowKey)) 
+        return -1;
+
+    if(isKeySmaller(attr, highKey, pageKey))
+        return 1;
+
+    if(!highInc && isKeyEqual(attr, highKey, pageKey)) 
+        return 1;
+
+    return 0;
+}
+
+
+RC IndexManager::isKeyEqual(const Attribute &attribute, const void* pageEntryKey, const void* key) {   
+
+    switch (attribute.type) {
+        case TypeVarChar:
+        {
+            int size;
+            memcpy(&size, pageEntryKey, sizeof(int));
+            char c_pageEntryKey[size + 1];
+            memcpy(c_pageEntryKey, pageEntryKey, size);
+            c_pageEntryKey[size] = 0;
+            memcpy(&size, key, sizeof(int));
+            char c_key[size + 1];
+            memcpy(c_key, key, size);
+            c_key[size] = 0;            
+            return strcmp(c_key, c_pageEntryKey) == 0;
+        }
+        case TypeInt:
+        {
+            int pageKey, searchKey;
+            memcpy(&pageKey, pageEntryKey, sizeof(int));
+            memcpy(&searchKey, key, sizeof(int));
+            return (pageKey == searchKey);
+        }
+        case TypeReal:
+        {
+            float pageKey, searchKey;
+            memcpy(&pageKey, pageEntryKey, sizeof(float));
+            memcpy(&searchKey, key, sizeof(float));
+            return (pageKey == searchKey);
+        }
+        default:
+            return -1;
+    }
+    
+}
+
+
 void IndexManager::hexdump(const void *ptr, int buflen) {
   unsigned char *buf = (unsigned char*)ptr;
   int i, j;
@@ -563,8 +617,6 @@ void IndexManager::hexdump(const void *ptr, int buflen) {
   }
 }
 
-
-
 RC IndexManager::scan(IXFileHandle &ixfileHandle,
         const Attribute &attribute,
         const void      *lowKey,
@@ -573,7 +625,44 @@ RC IndexManager::scan(IXFileHandle &ixfileHandle,
         bool        	highKeyInclusive,
         IX_ScanIterator &ix_ScanIterator)
 {
-    return -1;
+    ix_ScanIterator.ixfileHandle = &ixfileHandle;
+    ix_ScanIterator.attribute = attribute;
+    ix_ScanIterator.lowKey = lowKey;
+    ix_ScanIterator.highKey = highKey;
+    ix_ScanIterator.lowKeyInclusive = lowKeyInclusive;
+    ix_ScanIterator.highKeyInclusive = highKeyInclusive;
+
+    char* page = (char*)malloc(PAGE_SIZE);
+    uint16_t curPage = ROOT_PAGE;
+    struct nodeHeader pageHeader;
+
+    while(true) {
+            
+        ixfileHandle._fileHandle->readPage(curPage, page);
+        memcpy(&pageHeader, page, sizeof(struct nodeHeader));
+        uint16_t offset = sizeof(struct nodeHeader);    
+
+        struct interiorEntry entry;
+ 
+        if(pageHeader.leaf == true) {
+            break;
+        }
+
+        while (pageHeader.freeSpace > offset + sizeof(uint16_t)) {
+            entry = nextInteriorEntry(page, attribute, offset);
+            if (not isKeySmaller(attribute, entry.key, lowKey)) {
+                curPage = entry.left;
+                break;
+            } else {
+                curPage = entry.right;
+            }
+        }
+    }
+
+    ix_ScanIterator.pageOffset = sizeof(struct nodeHeader);
+    ix_ScanIterator.page = page;
+
+    return 0;
 }
 
 
@@ -583,17 +672,45 @@ RC IndexManager::scan(IXFileHandle &ixfileHandle,
 // IX_ScanIterator 
 ////////////////////////////////////////////////////////////////////////
 
-IX_ScanIterator::IX_ScanIterator()
-{
+IX_ScanIterator::IX_ScanIterator() {
+    _index_manager = IndexManager::instance();
 }
 
-IX_ScanIterator::~IX_ScanIterator()
-{
+IX_ScanIterator::~IX_ScanIterator() {
+    _index_manager = NULL;
+    free(page);
 }
 
-RC IX_ScanIterator::getNextEntry(RID &rid, void *key)
-{
-    return -1;
+RC IX_ScanIterator::getNextEntry(RID &rid, void *key) {
+
+    struct nodeHeader pageHeader;
+    struct leafEntry entry;
+
+    while(true) {
+            
+        memcpy(&pageHeader, page, sizeof(struct nodeHeader));
+
+        while (pageHeader.freeSpace > pageOffset) {
+            entry = _index_manager->nextLeafEntry((char*) page, attribute, pageOffset);
+            int cmp = _index_manager->keyCompare(attribute, entry.key, lowKey, highKey, lowKeyInclusive, highKeyInclusive);
+            if (cmp == 0) {
+                memcpy(&rid, &entry.rid, sizeof(RID));
+                memcpy(key, entry.key, _index_manager->getSize(attribute, entry.key));
+                return 0;
+            } else if(cmp == 1) {
+                break;
+            }
+        }
+
+        if(pageHeader.right == -1) {
+            break;
+        }
+
+        ixfileHandle->_fileHandle->readPage(pageHeader.right, page);
+        pageOffset = sizeof(struct nodeHeader);
+    }
+
+    return IX_EOF;
 }
 
 RC IX_ScanIterator::close()

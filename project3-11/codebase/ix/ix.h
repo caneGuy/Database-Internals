@@ -41,8 +41,8 @@ struct leafEntry {
 };
 
 class IndexManager {
-
     public:
+        friend class IX_ScanIterator;
         static IndexManager* instance();
 
         // Create an index file.
@@ -74,6 +74,9 @@ class IndexManager {
 
         // Print the B+ tree in pre-order (in a JSON record format)
         void printBtree(IXFileHandle &ixfileHandle, const Attribute &attribute) const;
+        RC isKeySmaller(const Attribute &attribute, const void* pageEntryKey, const void* key);
+        RC isKeyEqual(const Attribute &attribute, const void* pageEntryKey, const void* key);
+        RC keyCompare(const Attribute &attr, const void* pageKey, const void* lowKey, const void* highKey, bool lowInc, bool highInc);
 
     protected:
         IndexManager();
@@ -91,7 +94,6 @@ class IndexManager {
         struct interiorEntry nextInteriorEntry(char* page, Attribute attribute, uint16_t &offset) const;
         struct leafEntry nextLeafEntry(char* page, Attribute attribute, uint16_t &offset) const; 
         uint16_t getSize(const Attribute &attribute, const void* key) const;
-        RC isKeySmaller(const Attribute &attribute, const void* pageEntryKey, const void* key);
         void printLeafEntry(struct leafEntry entry) const;
         void printKey(const Attribute& attribute, void* key) const;
         RC createNewRoot(IXFileHandle &ixfileHandle, const Attribute &attribute, const void* key, uint16_t page2Num);
@@ -119,6 +121,16 @@ class IndexManager {
 
 class IX_ScanIterator {
     public:
+        IXFileHandle *ixfileHandle;
+        Attribute attribute;
+        const void *lowKey;
+        const void *highKey;
+        bool lowKeyInclusive;
+        bool highKeyInclusive;
+        void* page;
+        uint16_t pageOffset;
+        IndexManager *_index_manager;
+
 
 		// Constructor
         IX_ScanIterator();
