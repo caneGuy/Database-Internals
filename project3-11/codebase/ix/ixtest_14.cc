@@ -53,7 +53,7 @@ int testCase_14(const string &indexFileName,
     RID rid;
     IXFileHandle ixfileHandle;
     IX_ScanIterator ix_ScanIterator;
-    unsigned numOfTuples = 241;
+    unsigned numOfTuples = 20;
     char key[PAGE_SIZE];
     unsigned count = attribute.length;
 

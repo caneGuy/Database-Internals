@@ -49,6 +49,7 @@ int testCase_3(const string &indexFileName, const Attribute &attribute)
 
     // Conduct a scan
     rc = indexManager->scan(ixfileHandle, attribute, NULL, NULL, true, true, ix_ScanIterator);
+       cout << "test" << endl;
     assert(rc == success && "indexManager::scan() should not fail.");
 
     // There should be one record

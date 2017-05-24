@@ -67,13 +67,13 @@ public:
 
     // Let PagedFileManager access our private helper methods
     friend class PagedFileManager;
+    FILE *getfd();
 
 private:
     FILE *_fd;
 
     // Private helper methods
     void setfd(FILE *fd);
-    FILE *getfd();
 }; 
 
 #endif

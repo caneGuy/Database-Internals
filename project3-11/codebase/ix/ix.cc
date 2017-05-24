@@ -720,6 +720,8 @@ RC IndexManager::scan(IXFileHandle &ixfileHandle,
 {
     if (ixfileHandle._fileHandle->getfd() == NULL)
         return -1;
+    if (ixfileHandle._fileHandle->getNumberOfPages() == 0)
+        return -1;
     
     ix_ScanIterator.ixfileHandle = &ixfileHandle;
     ix_ScanIterator.attribute = attribute;
