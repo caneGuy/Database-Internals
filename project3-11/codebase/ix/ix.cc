@@ -107,7 +107,7 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
     // Note 2 * PAGE_SIZE
     char* page = (char*)malloc(2 * PAGE_SIZE);
     ixfileHandle._fileHandle->readPage(pageNum, page);
-    
+
     struct nodeHeader pageHeader;
     memcpy(&pageHeader, page, sizeof(struct nodeHeader));
     
@@ -126,6 +126,7 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
     }
     // memmove the entries that are not smaller than key
     // memcpy in the key and rid
+    // cout << "fs: " << pageHeader.freeSpace << " last: " << last << endl;
     memmove(page + last + keySize + sizeof(RID), page + last, pageHeader.freeSpace - last);
     memcpy(page + last, key, keySize);
     memcpy(page + last + keySize, &rid, sizeof(RID));
@@ -562,13 +563,13 @@ struct leafEntry IndexManager::nextLeafEntry(char* page, Attribute attribute, ui
     
     struct leafEntry entry;  
     entry.attribute = attribute;
-    do {
+    // do { // this loop would be necessary if marked stuff as deleted
         uint16_t size = getSize(attribute, page + offset);    
         memcpy(&entry.key, page + offset, size);
         memcpy(&entry.rid, page + offset + size, sizeof(RID));    
         entry.sizeOnPage = size + sizeof(RID);
         offset += entry.sizeOnPage;
-    } while (entry.rid.slotNum == DELETED_ENTRY);
+    // } while (entry.rid.slotNum == DELETED_ENTRY);
     return entry;
 
 }
