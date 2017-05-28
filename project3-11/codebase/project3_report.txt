@@ -76,4 +76,5 @@ For debugging we only print the first 10 characters of a VARCHAR, which is extre
 - Freely use this section to tell us about things that are related to the project 3, but not related to the other sections (optional)
 
 We have a function that compares keys, and a function that gets the size of a key regardless of what type they store. The data is passed in as a void* along with the attribute to figure out which type of key to compare to. 
-The only switch case that we need are in getSize, the two compare functions (which could be optimised to one) and the print function, therefore adding another datatype would be very easy.
+The only switch case that we need are in getSize, the two compare functions (which could be optimised to one) and the print function, therefore adding another datatype would be very easy
+We have a 2 byte memory leak on every test script because of the two instances which don't get free'd. Other than those 2 bytes we have no leaks.
