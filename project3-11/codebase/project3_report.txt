@@ -1,30 +1,79 @@
 1. Basic information
-Team number (e.g., 01) : 
-#1 Student ID : 
-#1 Student Name : 
-#2 Student ID : 
-#2 Student Name : 
+Team number (e.g., 01) : 11
+#1 Student ID : 1375886
+#1 Student Name : Travis Takai
+#2 Student ID : 1426712
+#2 Student Name : Brad Bernard
+#3 Student ID : 1442286
+#3 Student Name : Johannes Pitz
 
 2. Meta-data page in an index file
 - Show your meta-data page of an index design if you have any. 
-
+We make sure the root page is always page 0, and the attribute is passed in on every public function, so there is no need for any metadata.
 
 3. Index Entry Format
 - Show your index entry design (structure). 
 
+On interior pages we store a page header, followed by
+
+[pageID, key, pageID, key... pageID, key]
+pageID is stored as uint16_t, since we limited us to this size already in the RBFM, and an idex should never be lager than the file itself.
+
+Then we have a function that reads in the next node and returs an interior entry struct useing the following format:
+
+struct interiorEntry {
+    uint16_t left;				// pointer to the page left of this key (less than or equal to this key)
+    uint16_t right;				// pointer ot the page right of this key (strictly greater than this key)
+    Attribute attribute;		// not really neccessary
+    char key[PAGE_SIZE];		// holds the key which might at most be a page in size
+};
+
+We only store the left/right page numbers along with the keys. Each entry shares a right page number with the entry to its right except for the leftmost/rightmost entry.
+
+On leaf pages we store a page header, followed by
+[key, RID, key, RID... key, RID]
+
+When handling leaf pages we use our leafEntry struct with the following format:
+
+struct leafEntry {
+    Attribute attribute;
+    char key[PAGE_SIZE];
+    RID rid;
+    uint16_t sizeOnPage;
+};
+
+The leaf page entries only contain RID and key but we return the leafEntry struct when iterating through a node. We can use the RID to then go retrieve the appropriate data since the index uses approach 2.
 
 4. Page Format
 - Show your internal-page (non-leaf node) design.
-
 - Show your leaf-page (leaf node) design.
+
+The page format for both internal and leaf pages is the same, they both store a header (struct) at the top:
+
+struct nodeHeader {
+    uint16_t leaf; 			// indicates if the page is a leaf page or not (bool or uint_8 take up the same aount of space)
+    uint16_t pageNum;		// the pageNum of this page
+    uint16_t freeSpace;		// points to the first byte in the page that is free
+    uint16_t left;			// points to the page left of this page
+    uint16_t right;			// points ot tha page right of this page (not actually used for anything)
+};
+
+Each page starts with a struct "header" that contains whether it is a leaf or interior page, the page number, offset to free space pointer, page number for the node to the left, and page number for the node to the right. Leaf pages consist of only data from parts of the leaf data struct as described in the entry section. Similarly, the interior pages only contain data from the interior page struct. The page consists of as many entries as can fit on the page until we have to split the node.
 
 
 5. Implementation Detail
 - Have you implemented non-lazy deletion? Choose Yes or No: Also provide implementation details if yes.
+Our implementation does not restructure the tree by any means, but it does free up the space of the deleted entry on the leaf pages.
+We do this using memmove(), this does not interfere with the "delete/scan" since the scan chaches exactly one page in memory.
 
 - Other implementation details:
+We don't allow that entries with the same key span more than one page. It is much easier to make that a certain key can only be on one page, and according to a piazza post it is sufficient for this project if we throw an error.
+Also we throw an error if someone is trying to insert the same key with the same RID, as suggested in another piazza post.
 
+For debugging we only print the first 10 characters of a VARCHAR, which is extremly nice for test 14, you can uncomment that if you want to, but right now we just print the whole thing.
 
 6. Other (optional)
 - Freely use this section to tell us about things that are related to the project 3, but not related to the other sections (optional)
 
+We have a function that compares keys, and a function that gets the size of a key regardless of what type they store. The data is passed in as a void* along with the attribute to figure out which type of key to compare to. 
+The only switch case that we need are in getSize, the two compare functions (which could be optimised to one) and the print function, therefore adding another datatype would be very easy.
