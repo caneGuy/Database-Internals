@@ -117,16 +117,38 @@ RC IndexManager::insertToLeaf(IXFileHandle &ixfileHandle, const Attribute &attri
     uint16_t last = offset;      
     struct leafEntry entry;
     // walk through the page until key is not smaller any more 
-    // or we reached the last entry 
+    // or we reached the last entry
+    bool past = pageHeader.freeSpace > offset; 
     while (pageHeader.freeSpace > offset) {
         entry = nextLeafEntry(page, attribute, offset);
-        if (not isKeySmaller(attribute, entry.key, key))
+        if (not isKeySmaller(attribute, entry.key, key)) {
             break;
+        }
         last = offset;
     }
+
+    if(past && entry.rid.pageNum == rid.pageNum && entry.rid.slotNum == rid.slotNum) {
+        cerr << "ERROR: Found entry with same rid" << endl;
+        free(page);
+        return -1;
+    }
+
+    while(pageHeader.freeSpace > offset) {
+        entry = nextLeafEntry(page, attribute, offset);
+        if(entry.rid.pageNum == rid.pageNum && entry.rid.slotNum == rid.slotNum) {
+           cerr << "ERROR: Found entry with same rid" << endl;
+           free(page);
+           return -1;
+        } else {
+          /* cout << "entry PN: " << entry.rid.pageNum << " SN: " << entry.rid.slotNum << endl;
+           cout << "new PN: " << rid.pageNum << " SN: " << rid.slotNum << endl; */
+        }
+    }
+    
     // memmove the entries that are not smaller than key
     // memcpy in the key and rid
     // cout << "fs: " << pageHeader.freeSpace << " last: " << last << endl;
+    
     memmove(page + last + keySize + sizeof(RID), page + last, pageHeader.freeSpace - last);
     memcpy(page + last, key, keySize);
     memcpy(page + last + keySize, &rid, sizeof(RID));
