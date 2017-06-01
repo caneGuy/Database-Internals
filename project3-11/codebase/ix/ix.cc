@@ -543,8 +543,8 @@ void IndexManager::printKey(const Attribute& attribute, const void* key) const {
             char string[size + 1];
             memcpy(string, (char*)key + 4, size);
             // To make test14 readable
-            if (size>10)
-                size = 10;
+            //if (size>10)
+            //    size = 10;
             string[size] = 0;
             cout << string;
             break;
