@@ -990,10 +990,305 @@ RC TEST_RM_15(const string &tableName)
     return 0;
 }
 
+
+RC TEST_RM_PRIVATE_1(const string &tableName)
+{
+    // Functions tested
+    // 1. Insert 100,000 tuples
+    // 2. Read Attribute
+    cerr << endl << "***** In RM Test Case Private 1 *****" << endl;
+
+    RID rid;
+    int tupleSize = 0;
+    int numTuples = 100000;
+    void *tuple;
+    void *returnedData = malloc(300);
+
+    vector<RID> rids;
+    vector<char *> tuples;
+    set<int> user_ids;
+    RC rc = 0;
+    
+    // GetAttributes
+    vector<Attribute> attrs;
+    rc = rm->getAttributes(tableName, attrs);
+    assert(rc == success && "RelationManager::getAttributes() should not fail.");
+
+    int nullAttributesIndicatorActualSize = getActualByteForNullsIndicator(attrs.size());
+    unsigned char *nullsIndicator = (unsigned char *) malloc(nullAttributesIndicatorActualSize);
+	memset(nullsIndicator, 0, nullAttributesIndicatorActualSize);
+
+    for(int i = 0; i < numTuples; i++)
+    {
+        tuple = malloc(300);
+
+        // Insert Tuple
+        float sender_location = (float)i;
+	    float send_time = (float)i + 2000;
+        int tweetid = i;
+        int userid = i + i % 100;
+        stringstream ss;
+        ss << setw(5) << setfill('0') << i;
+        string msg = "Msg" + ss.str();
+        string referred_topics = "Rto" + ss.str();
+        
+        prepareTweetTuple(attrs.size(), nullsIndicator, tweetid, userid, sender_location, send_time, referred_topics.size(), referred_topics, msg.size(), msg, tuple, &tupleSize);
+
+        user_ids.insert(userid);
+        rc = rm->insertTuple(tableName, tuple, rid);
+    	assert(rc == success && "RelationManager::insertTuple() should not fail.");
+
+        tuples.push_back((char *)tuple);
+        rids.push_back(rid);
+
+        if (i % 10000 == 0){
+           cerr << (i+1) << "/" << numTuples << " records have been inserted so far." << endl;
+        }
+    }
+	cerr << "All records have been inserted." << endl;
+	
+	// Required for the other tests
+    writeRIDsToDisk(rids);
+    writeUserIdsToDisk(user_ids);
+
+	bool testFail = false;
+    string attributeName;
+
+	for(int i = 0; i < numTuples; i=i+10)
+    {
+        int attrID = rand() % 6;
+        if (attrID == 0) {
+	    attributeName = "tweetid";
+        } else if (attrID == 1) {
+	    attributeName = "userid";
+        } else if (attrID == 2) {
+            attributeName = "sender_location";
+        } else if (attrID == 3) {
+            attributeName = "send_time";
+        } else if (attrID == 4){
+            attributeName = "referred_topics";
+        } else if (attrID == 5){
+            attributeName = "message_text";
+        }
+        rc = rm->readAttribute(tableName, rids[i], attributeName, returnedData);
+    	assert(rc == success && "RelationManager::readAttribute() should not fail.");
+
+		int value = 0;
+		float fvalue = 0;
+        stringstream ss;
+        ss << setw(5) << setfill('0') << i;
+        string msgToCheck = "Msg" + ss.str();
+        string referred_topicsToCheck = "Rto" + ss.str();
+		
+		// tweetid
+        if (attrID == 0) {
+            if (memcmp(((char *)returnedData + 1), ((char *)tuples.at(i) + 1), 4) != 0) {
+               cout << *(int*)(returnedData + 1) << endl;
+               cout << *(int*)(tuples.at(i) + 1) << endl;
+                testFail = true;
+            } else {
+            	// value = *(int *)((char *)returnedData + 1);
+            	// if (value != i) {
+                    // testFail = true;
+            	// }
+            }
+		// userid
+        } else if (attrID == 1) {
+            if (memcmp(((char *)returnedData + 1), ((char *)tuples.at(i) + 5), 4) != 0) {
+                testFail = true;
+            } else {
+            	value = *(int *)((char *)returnedData + 1);
+            	if (value != (i + i % 100)) {
+                    testFail = true;
+            	}
+            }
+		// sender_location
+        } else if (attrID == 2) {
+            if (memcmp(((char *)returnedData + 1), ((char *)tuples.at(i) + 9), 4) != 0) {
+                testFail = true;
+            } else {
+            	fvalue = *(float *)((char *)returnedData + 1);
+            	if (fvalue != (float) i) {
+                    testFail = true;
+            	}
+            }
+		// send_time
+        } else if (attrID == 3) {
+            if (memcmp(((char *)returnedData + 1), ((char *)tuples.at(i) + 13), 4) != 0) {
+                testFail = true;
+            }
+		// referred_topics
+        } else if (attrID == 4) {
+            if (memcmp(((char *)returnedData + 5), ((char *)tuples.at(i) + 21), 8) != 0) {
+                testFail = true;
+            } else {
+            	std::string strToCheck (((char *)returnedData + 5), 8);
+            	if (strToCheck.compare(referred_topicsToCheck) != 0) {
+            		testFail = true;
+            	}
+            }
+		// message_text
+        } else if (attrID == 5) {
+            if (memcmp(((char *)returnedData + 5), ((char *)tuples.at(i) + 33), 8) != 0) {
+                testFail = true;
+            } else {
+            	std::string strToCheck (((char *)returnedData + 5), 8);
+            	if (strToCheck.compare(msgToCheck) != 0) {
+            		testFail = true;
+            	}
+            }
+        }
+
+        if (testFail) {
+		    cerr << "***** RM Test Case Private 1 failed on " << i << "th tuple - attr: " << attrID << "*****" << endl << endl;
+		    free(returnedData);
+			for(int j = 0; j < numTuples; j++)
+			{
+				free(tuples[j]);
+			}
+		    rc = rm->deleteTable(tableName);
+		    remove("rids_file");
+		    remove("user_ids_file");
+		    
+		    return -1;
+        }
+
+    }
+
+    free(returnedData);
+    for(int i = 0; i < numTuples; i++)
+    {
+        free(tuples[i]);
+    }
+
+    cerr << "***** RM Test Case Private 1 finished. The result will be examined. *****" << endl << endl;
+
+    return 0;
+}
+RC TEST_RM_PRIVATE_3(const string &tableName)
+{
+    // Functions tested
+    // 1. Simple Scan
+    cerr << endl << "***** In RM Test Case Private 3 *****" << endl;
+
+    RID rid;    
+    int numTuples = 100000;
+    void *returnedData = malloc(300);
+    set<int> user_ids;
+
+    // Read UserIds that was created in the private test 1
+    readUserIdsFromDisk(user_ids, numTuples);     
+
+    // Set up the iterator
+    RM_ScanIterator rmsi;
+    string attr = "userid";
+    vector<string> attributes;
+    attributes.push_back(attr);
+    RC rc = rm->scan(tableName, "", NO_OP, NULL, attributes, rmsi);
+    if(rc != success) {
+	    cerr << "***** RM Test Case Private 3 failed. *****" << endl << endl;
+        return -1;
+    }
+    
+    int userid = 0;
+    while(rmsi.getNextTuple(rid, returnedData) != RM_EOF)
+    {
+    	userid = *(int *)((char *)returnedData + 1);
+      cout << userid << endl;
+
+        if (user_ids.find(userid) == user_ids.end())
+        {
+    	    cerr << "***** RM Test Case Private 3 failed. *****" << endl << endl;
+            rmsi.close();
+            free(returnedData);
+            return -1;
+        }
+    }
+    rmsi.close();
+    free(returnedData);
+
+    cerr << "***** RM Test Case Private 3 finished. The result will be examined. *****" << endl << endl;
+    return 0;
+}
+int TEST_RM_PRIVATE_4(const string &tableName)
+{
+    // Functions tested
+    // 1. Scan Table (VarChar)
+    cerr << endl << "***** In RM Test Case Private 4 *****" << endl;
+
+    RID rid; 
+    vector<string> attributes;   
+    void *returnedData = malloc(300);
+
+    void *value = malloc(16);
+    string msg = "Msg00099";
+    int msgLength = 8;
+    
+   // memcpy((char *)value, &msgLength, 4);
+   // memcpy((char *)value + 4, msg.c_str(), msgLength);
+   memcpy((char*) value, msg.c_str(), msgLength);
+    
+    string attr = "message_text";   
+    attributes.push_back("sender_location");
+    attributes.push_back("send_time");
+
+    RM_ScanIterator rmsi2;
+    RC rc = rm->scan(tableName, attr, LT_OP, value, attributes, rmsi2);
+    if(rc != success) {
+        free(returnedData);
+	    cerr << "***** RM Test Case Private 4 failed. *****" << endl << endl;
+        return -1;
+    }
+    
+    float sender_location = 0.0;
+    float send_time = 0.0;
+    
+    int counter = 0;
+    while(rmsi2.getNextTuple(rid, returnedData) != RM_EOF)
+    {
+        counter++;
+    
+    	sender_location = *(float *)((char *)returnedData + 1);
+    	send_time = *(float *)((char *)returnedData + 5);
+    	    
+        if (!(sender_location >= 0.0 || sender_location <= 98.0 || send_time >= 2000.0 || send_time <= 2098.0))
+        {
+             cerr << "***** A wrong entry was returned. RM Test Case Private 4 failed *****" << endl << endl;
+             rmsi2.close();
+             free(returnedData);
+             free(value);
+             return -1;
+        }
+    }
+
+    rmsi2.close();
+    free(returnedData);
+    free(value);
+    
+    if (counter != 99){
+       cerr << "***** The number of returned tuple: " << counter << " is not correct. RM Test Case Private 4 failed *****" << endl << endl;
+    } else {
+        cerr << "***** RM Test Case Private 4 finished. The result will be examined. *****" << endl << endl;
+    }
+    return 0;
+}
+
 int main()
 {
+   
+   RC  rcmain;
+       // createTweetTable("tbl_private_2");
+    // RC rcmain = TEST_RM_PRIVATE_2("tbl_private_2");
+    // return rcmain;
+    
+      // createTweetTable("tbl_private_1");
+    // rcmain = TEST_RM_PRIVATE_1("tbl_private_1");
+    // rcmain = TEST_RM_PRIVATE_3("tbl_private_1");
+     rcmain = TEST_RM_PRIVATE_4("tbl_private_1");
+    return rcmain;
+   
     // Get Attributes
-    RC rcmain = TEST_RM_0("tbl_employee");
+    rcmain = TEST_RM_0("tbl_employee");
 
     rcmain = TEST_RM_1("tbl_employee", 8, "Anteater", 27, 6.2, 10000);
     

@@ -374,15 +374,19 @@ RC RecordBasedFileManager::readAttribute(FileHandle &fileHandle, const vector<At
     
     uint16_t index;
     for (index = 0; index < recordDescriptor.size(); ++index) {
+       // cout << index << endl;
         if (recordDescriptor[index].name == attributeName) {
             break;
         }
+        // cout << index << endl;
     }
+    // cout << "index" << index << endl;
+    // cout << recordDescriptor[index].type << endl;
     
     char target = page[record + sizeof(uint16_t) + index/8];
     // if field is null meset with 1's 
     if (target & (1<<(7-index%8))) {
-        memset(data, 1, 1);
+        memset(data, 0xff, 1);
     } else {
         memset(data, 0, 1);
     }
@@ -391,9 +395,12 @@ RC RecordBasedFileManager::readAttribute(FileHandle &fileHandle, const vector<At
     uint16_t nullvec = ceil(fieldCount / 8.0);
     
     uint16_t begin_offset;
-    memcpy(&begin_offset, &page[record + sizeof(uint16_t) + nullvec + (index - 1) * sizeof(uint16_t)], sizeof(uint16_t));
+    if (index == 0) 
+       begin_offset = sizeof(uint16_t) + nullvec + fieldCount * sizeof(uint16_t);
+    else 
+       memcpy(&begin_offset, &page[record + sizeof(uint16_t) + nullvec + (index - 1) * sizeof(uint16_t)], sizeof(uint16_t));
     uint16_t end_offset;
-    memcpy(&end_offset, &page[record + sizeof(uint16_t) + nullvec + index * sizeof(uint16_t)], sizeof(uint16_t));
+    memcpy(&end_offset, &page[record + sizeof(uint16_t) + nullvec + (index) * sizeof(uint16_t)], sizeof(uint16_t));
     
     if (recordDescriptor[index].type == TypeVarChar){
         int diff = end_offset - begin_offset;
@@ -575,6 +582,7 @@ RC RecordBasedFileManager::scan(FileHandle &fileHandle,
     rbfm_ScanIterator.recordDescriptor = recordDescriptor;
     rbfm_ScanIterator.compOp = compOp;
     rbfm_ScanIterator.value = (void*) value;
+    // cout << "set up " <<  
     rbfm_ScanIterator.curr_page = -1;
     rbfm_ScanIterator.curr_slot = 0;
     rbfm_ScanIterator.page = (char*)malloc(PAGE_SIZE); ;
@@ -739,7 +747,8 @@ uint16_t RBFM_ScanIterator::int_comp(int val) {
 }
 
 uint16_t RBFM_ScanIterator::vc_comp(string val) {
-    string val2 = (char*)(value);
+    string val2 = string((char*)(value));
+    cout << "comparing " << val2 << " to " << val << endl;
     int cmp = strcmp(val2.c_str(), val.c_str());
     switch (compOp) {
         case EQ_OP: return cmp == 0;
