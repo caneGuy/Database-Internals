@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <tuple>
 
 #include "../rbf/rbfm.h"
 #include "../ix/ix.h"
@@ -65,6 +66,13 @@ typedef struct IndexedAttr
     Attribute attr;
 } IndexedAttr;
 
+typedef tuple<string, int> IndexTuple;
+#define TupleColumn 0
+#define TupleIndex 1
+
+#define INDEX_INSERT 0
+#define INDEX_DELETE 1
+
 // RM_ScanIterator is an iteratr to go through tuples
 class RM_ScanIterator {
 public:
@@ -91,6 +99,10 @@ class RM_IndexScanIterator {
   // "key" follows the same format as in IndexManager::insertEntry()
   RC getNextEntry(RID &rid, void *key); 	// Get next matching entry
   RC close(); // Terminate index scan
+
+  friend class RelationManager;
+private:
+    IX_ScanIterator ix_iter;
 };
 
 
@@ -187,6 +199,8 @@ private:
   RC isSystemTable(bool &system, const string &tableName);
   // RC tableExists(bool &exists, const string &tableName, int32_t tableId);
 
+  static RC getValue(const string name, const vector<Attribute> &attrs, const void* data, void* value); 
+  RC updateIndexes(const string& tableName, const vector<Attribute> recordDescriptor, const void* data, const RID& rid, char flag);
 
 
   // Utility functions for converting single values to/from api format

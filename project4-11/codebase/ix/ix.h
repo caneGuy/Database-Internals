@@ -251,6 +251,8 @@ class IX_ScanIterator {
         RC close();
 
         friend class IndexManager;
+        friend class RelationManager;
+        friend class RM_IndexScanIterator;
     private:
         IXFileHandle *fileHandle;
         Attribute attr;
