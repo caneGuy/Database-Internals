@@ -56,8 +56,12 @@ class Iterator {
             int offset = ceil(attrs.size() / 8.0);
             for (size_t i = 0; i < attrs.size(); ++i) {
                 char target = *((char*)data + i/8);
-                if (target & (1<<(7-i%8)))
-                    return IS_NULL;
+                if (target & (1<<(7-i%8))) {
+                    if (name == attrs[i].name)
+                        return IS_NULL;
+                    else 
+                        continue;
+                }
                 int size = sizeof(int);
                 if (attrs[i].type == TypeVarChar) {
                     memcpy(&size, (char*)data + offset, sizeof(int));
@@ -65,13 +69,13 @@ class Iterator {
                     memcpy((char*)value + sizeof(int), (char*)data + offset + sizeof(int), size);
                     size += sizeof(int);
                 } else 
-                    memcpy(value, (char*)data + offset, sizeof(int));                  
+                    memcpy(value, (char*)data + offset, sizeof(int));       
+                offset += size;                
                 if (name == attrs[i].name)
-                    return size;       
-                offset += size;
+                    return size;  
             }
             return 0;
-        };
+        };   
         
         RC compare(CompOp op, AttrType type, void* left, void* right) {            
             switch (type) {
@@ -300,13 +304,16 @@ class Filter : public Iterator {
 class Project : public Iterator {
     // Projection operator
     public:
+        vector<string> attrNames;
+        Iterator* iter;
+        vector<Attribute> attrs;
         Project(Iterator *input,                    // Iterator of input R
-              const vector<string> &attrNames){};   // vector containing attribute names
+              const vector<string> &attrNames);   // vector containing attribute names
         ~Project(){};
 
-        RC getNextTuple(void *data) {return QE_EOF;};
+        RC getNextTuple(void *data);
         // For attribute in vector<Attribute>, name it as rel.attr
-        void getAttributes(vector<Attribute> &attrs) const{};
+        void getAttributes(vector<Attribute> &attrs) const;
 };
 
 // Optional for everyone. 10 extra-credit points
