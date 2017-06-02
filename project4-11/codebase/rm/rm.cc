@@ -877,12 +877,12 @@ RC RelationManager::indexScan(const string &tableName,
 	return -1;
 }
 
-RC getNextEntry(RID &rid, void *key) {
+RC RM_IndexScanIterator::getNextEntry(RID &rid, void *key) {
    return RM_EOF;
 }  
 
 
-RC close() {
+RC RM_IndexScanIterator::close() {
    return -1;
 }
 

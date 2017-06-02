@@ -1,13 +1,24 @@
 #ifndef _qe_h_
 #define _qe_h_
 
+// #include <string>
+// #include <vector>
+// #include <stdio.h>
+
 #include <vector>
+#include <string>
+#include <cstdint>
+#include <cstring>
+#include <iostream>
+#include <assert.h> 
+#include <math.h> 
 
 #include "../rbf/rbfm.h"
 #include "../rm/rm.h"
 #include "../ix/ix.h"
 
 #define QE_EOF (-1)  // end of the index scan
+#define IS_NULL (5)  // column entry is null
 
 using namespace std;
 
@@ -39,6 +50,65 @@ class Iterator {
         virtual RC getNextTuple(void *data) = 0;
         virtual void getAttributes(vector<Attribute> &attrs) const = 0;
         virtual ~Iterator() {};
+        
+    protected:
+        RC compare(CompOp op, AttrType type, void* left, void* right) {            
+            switch (type) {
+                case TypeVarChar: {
+                    int size;
+                    memcpy(&size, left, sizeof(int));
+                    char c_left[size + 1];
+                    memcpy(c_left, (char*)left + 4, size);
+                    c_left[size] = 0;
+                    memcpy(&size, right, sizeof(int));
+                    char c_right[size + 1];
+                    memcpy(c_right, (char*)right + 4, size);
+                    c_right[size] = 0; 
+                    // string left = (c_left);
+                    // return 0;
+                    return comp<string>(op, c_left, c_right);
+                }
+                case TypeInt: return comp<int>(op, *(int*)left, *(int*)right);
+                case TypeReal: return comp<float>(op, *(float*)left, *(float*)right);
+                default:
+                    assert(false && "not a valid type in comparision");
+            }            
+        };
+                
+        RC getValue(const string name, const vector<Attribute> &attrs, const void* data, void* value) {
+            int offset = ceil(attrs.size() / 8.0);
+            for (size_t i = 0; i < attrs.size(); ++i) {
+                char target = *((char*)data + i/8);
+                if (target & (1<<(7-i%8)))
+                    return IS_NULL;
+                int size;
+                if (attrs[i].type == TypeVarChar) {
+                    memcpy(&size, (char*)data + offset, sizeof(int));
+                    memcpy(value, (char*)data + offset + sizeof(int), size);
+                    offset += size + sizeof(int);
+                } else {
+                    memcpy(value, (char*)data + offset, sizeof(int));
+                    offset += sizeof(int);
+                }                    
+                if (name == attrs[i].name)
+                    return 0;                
+            }
+            return -1;
+        };
+                
+        template <class T>
+        bool comp (CompOp op, T left, T right) {
+            switch (op) {
+                case EQ_OP: return (left == right);
+                case LT_OP: return (left <= right); 
+                case GT_OP: return (left >= right); 
+                case LE_OP: return (left <  right); 
+                case GE_OP: return (left >  right); 
+                case NE_OP: return (left != right);  
+                case NO_OP: return true;
+                default: assert(false && "not a valid compop in comparision");
+            }
+        };
 };
 
 
@@ -193,14 +263,39 @@ class IndexScan : public Iterator
 class Filter : public Iterator {
     // Filter operator
     public:
+        Iterator *iterator;
+        Condition condition;
+        vector<Attribute> attrs;
+        AttrType type;
+        
         Filter(Iterator *input,               // Iterator of input R
                const Condition &condition     // Selection condition
         );
         ~Filter(){};
 
-        RC getNextTuple(void *data) {return QE_EOF;};
+        RC getNextTuple(void *data) { 
+            void* value = malloc(sizeof(data));//PAGE_SIZE);
+            while (true) {
+                if (iterator->getNextTuple(data) == QE_EOF) {
+                    free(value);
+                    return QE_EOF;
+                }
+                // assuming we want row if attr is null
+                if (getValue(condition.lhsAttr, attrs, data, value) == IS_NULL)
+                    break;
+                if (compare(condition.op, type, value, condition.rhsValue.data))
+                    break;
+            }
+            free(value);
+            return SUCCESS;
+        };
+        
         // For attribute in vector<Attribute>, name it as rel.attr
-        void getAttributes(vector<Attribute> &attrs) const{};
+        void getAttributes(vector<Attribute> &attrs) const{
+            attrs.clear();
+            attrs = this->attrs;
+        };   
+
 };
 
 
@@ -216,6 +311,7 @@ class Project : public Iterator {
         void getAttributes(vector<Attribute> &attrs) const{};
 };
 
+// Optional for everyone. 10 extra-credit points
 class BNLJoin : public Iterator {
     // Block nested-loop join operator
     public:
@@ -251,16 +347,16 @@ class INLJoin : public Iterator {
 class GHJoin : public Iterator {
     // Grace hash join operator
     public:
-      GHJoin(Iterator *leftIn,               // Iterator of input R
-            Iterator *rightIn,               // Iterator of input S
-            const Condition &condition,      // Join condition (CompOp is always EQ)
-            const unsigned numPartitions     // # of partitions for each relation (decided by the optimizer)
-      ){};
-      ~GHJoin(){};
+        GHJoin(Iterator *leftIn,               // Iterator of input R
+                Iterator *rightIn,               // Iterator of input S
+                const Condition &condition,      // Join condition (CompOp is always EQ)
+                const unsigned numPartitions     // # of partitions for each relation (decided by the optimizer)
+        ){};
+        ~GHJoin(){};
 
-      RC getNextTuple(void *data){return QE_EOF;};
-      // For attribute in vector<Attribute>, name it as rel.attr
-      void getAttributes(vector<Attribute> &attrs) const{};
+        RC getNextTuple(void *data){return QE_EOF;};
+        // For attribute in vector<Attribute>, name it as rel.attr
+        void getAttributes(vector<Attribute> &attrs) const{};
 };
 
 class Aggregate : public Iterator {
@@ -278,7 +374,7 @@ class Aggregate : public Iterator {
         Aggregate(Iterator *input,             // Iterator of input R
                   Attribute aggAttr,           // The attribute over which we are computing an aggregate
                   Attribute groupAttr,         // The attribute over which we are grouping the tuples
-                  AggregateOp op              // Aggregate operation
+                  AggregateOp op               // Aggregate operation
         ){};
         ~Aggregate(){};
 
