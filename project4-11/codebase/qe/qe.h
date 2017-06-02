@@ -56,8 +56,12 @@ class Iterator {
             int offset = ceil(attrs.size() / 8.0);
             for (size_t i = 0; i < attrs.size(); ++i) {
                 char target = *((char*)data + i/8);
-                if (target & (1<<(7-i%8)))
-                    return IS_NULL;
+                if (target & (1<<(7-i%8))) {
+                    if (name == attrs[i].name)
+                        return IS_NULL;
+                    else 
+                        continue;
+                }
                 int size = sizeof(int);
                 if (attrs[i].type == TypeVarChar) {
                     memcpy(&size, (char*)data + offset, sizeof(int));
@@ -65,12 +69,28 @@ class Iterator {
                     memcpy((char*)value + sizeof(int), (char*)data + offset + sizeof(int), size);
                     size += sizeof(int);
                 } else 
-                    memcpy(value, (char*)data + offset, sizeof(int));                  
+                    memcpy(value, (char*)data + offset, sizeof(int));       
+                offset += size;                
                 if (name == attrs[i].name)
-                    return size;       
-                offset += size;
+                    return size;  
             }
             return 0;
+        };    
+        
+        int getSize(const vector<Attribute> &attrs, const void* data) {
+            int offset = ceil(attrs.size() / 8.0);
+            for (size_t i = 0; i < attrs.size(); ++i) {
+                char target = *((char*)data + i/8);
+                if (target & (1<<(7-i%8))) 
+                    continue;
+                if (attrs[i].type == TypeVarChar) {
+                    int size;
+                    memcpy(&size, (char*)data + offset, sizeof(int));
+                    offset += size;
+                }      
+                offset += sizeof(int);
+            }
+            return offset;
         };
         
         RC compare(CompOp op, AttrType type, void* left, void* right) {            
@@ -106,6 +126,28 @@ class Iterator {
                 case NO_OP: return true;
                 default: assert(false && "not a valid compop in comparision");
             }
+        };
+        
+        RC concatData(vector<Attribute> outerAttrs, const void* outerData, vector<Attribute> innerAttrs, const void* innerData, void* data) {
+            int outerNullSize = ceil(outerAttrs.size() / 8.0);
+            int innerNullSize = ceil(innerAttrs.size() / 8.0);
+            int totalNullSize = ceil((outerAttrs.size() + innerAttrs.size()) / 8.0);
+            memcpy(data, outerData, outerNullSize);
+            // do some stuff            
+            for (size_t i = 0; i < innerAttrs.size(); ++i) {
+                size_t k = i + outerAttrs.size();
+                char target = *((char*)data + (k)/8);
+                char origin = *((char*)innerData + i/8);
+                if (origin & (1<<(7-i%8))) 
+                    target |= (1<<(7-k%8));
+                else 
+                    target &= ~(1<<(7-k%8));
+            }
+            int outerSize = getSize(outerAttrs, outerData) - outerNullSize;
+            int innerSize = getSize(innerAttrs, innerData) - innerNullSize;
+            memcpy((char*)data + totalNullSize, (char*)outerData + outerNullSize, outerSize);
+            memcpy((char*)data + totalNullSize + outerSize, (char*)innerData + innerNullSize, innerSize);
+            return 0;
         };
 };
 
@@ -213,10 +255,10 @@ class IndexScan : public Iterator
         };
 
         // Start a new iterator given the new key range
-        void setIterator(void* lowKey,
-                         void* highKey,
-                         bool lowKeyInclusive,
-                         bool highKeyInclusive)
+        void setIterator(void* lowKey = NULL,
+                         void* highKey = NULL,
+                         bool lowKeyInclusive = true,
+                         bool highKeyInclusive = true)
         {
             iter->close();
             delete iter;
@@ -264,27 +306,36 @@ class Filter : public Iterator {
         Iterator *iterator;
         Condition condition;
         vector<Attribute> attrs;
-        AttrType type;
+        void* buffer;
         
         Filter(Iterator *input,               // Iterator of input R
                const Condition &condition     // Selection condition
-        );
-        ~Filter(){};
+        ){
+            cout << "in filter" << endl;
+            this->iterator = input;
+            assert(condition.bRhsIsAttr == false && "didn't think this makes any sense");
+            this->condition = condition;
+            this->attrs.clear();
+            input->getAttributes(this->attrs);
+            this->buffer = malloc(PAGE_SIZE);
+            cout << "in filter" << endl;
+        };
+        ~Filter(){
+            free(this->buffer);
+        };
 
         RC getNextTuple(void *data) { 
-            void* value = malloc(sizeof(data));//PAGE_SIZE);
+            cout << "in next tuple" << endl;
             while (true) {
-                if (iterator->getNextTuple(data) == QE_EOF) {
-                    free(value);
+                if (iterator->getNextTuple(data) == QE_EOF)
                     return QE_EOF;
-                }
+            cout << "in next loop" << endl;
                 // assuming we want row if attr is null
-                if (getValue(condition.lhsAttr, attrs, data, value) == IS_NULL)
+                if (getValue(condition.lhsAttr, attrs, data, this->buffer) == IS_NULL)
                     break;
-                if (compare(condition.op, type, value, condition.rhsValue.data))
+                if (compare(condition.op, condition.rhsValue.type, this->buffer, condition.rhsValue.data))
                     break;
             }
-            free(value);
             return SUCCESS;
         };
         
@@ -330,15 +381,76 @@ class BNLJoin : public Iterator {
 class INLJoin : public Iterator {
     // Index nested-loop join operator
     public:
+        Iterator *outer;
+        IndexScan *inner;
+        Condition condition;
+        vector<Attribute> outerAttrs;
+        vector<Attribute> innerAttrs;
+        void* outerData;
+        void* outerValue;
+        void* innerData;
+        bool needNewOuterPage;        
+        AttrType type;
+        
         INLJoin(Iterator *leftIn,           // Iterator of input R
                IndexScan *rightIn,          // IndexScan Iterator of input S
                const Condition &condition   // Join condition
-        ){};
-        ~INLJoin(){};
+        ){
+            this->outer = leftIn;
+            this->inner = rightIn;
+            this->condition = condition;
+            this->outerData = malloc(PAGE_SIZE);
+            this->innerData = malloc(PAGE_SIZE);
+            this->outerValue = malloc(PAGE_SIZE);
+            this->needNewOuterPage = true;   
+            outer->getAttributes(this->outerAttrs);
+            inner->getAttributes(this->innerAttrs);
+            for (auto &attr : this->outerAttrs)
+                if (condition.lhsAttr == attr.name) {
+                    this->type = attr.type;
+                    return;
+                }
+            assert(false && "could not find attribute for comparison");            
+        };
+        ~INLJoin(){
+            free(outerData);
+            free(innerData);
+        };
 
-        RC getNextTuple(void *data){return QE_EOF;};
+        RC getNextTuple(void *data){            
+            while (true) {
+                if (needNewOuterPage) {
+                    if (outer->getNextTuple(this->outerData) == QE_EOF)
+                        return QE_EOF;
+                    else 
+                        if (getValue(condition.lhsAttr, outerAttrs, this->outerValue, this->outerData) == IS_NULL)
+                            continue;
+                        else
+                            needNewOuterPage = false;
+                }
+                if (inner->getNextTuple(this->innerData) == QE_EOF) {
+                    inner->setIterator();
+                    needNewOuterPage = true;
+                    continue;
+                }
+                // assuming we don't want the row if attr is null
+                if (getValue(condition.lhsAttr, innerAttrs, this->innerData, data) == IS_NULL)
+                    continue;
+                if (compare(condition.op, this->type, this->outerValue, data))
+                    break;
+            }
+            concatData(outerAttrs, outerData, innerAttrs, innerData, data);
+            return SUCCESS;
+        };
+        
         // For attribute in vector<Attribute>, name it as rel.attr
-        void getAttributes(vector<Attribute> &attrs) const{};
+        void getAttributes(vector<Attribute> &attrs) const{
+            attrs.clear();            
+            for (auto &attr : this->outerAttrs)
+                attrs.push_back(attr);
+            for (auto &attr : this->innerAttrs)
+                attrs.push_back(attr);
+        };
 };
 
 // Optional for everyone. 10 extra-credit points
