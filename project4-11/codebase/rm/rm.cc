@@ -15,7 +15,7 @@ RelationManager* RelationManager::instance()
 }
 
 RelationManager::RelationManager()
-: tableDescriptor(createTableDescriptor()), columnDescriptor(createColumnDescriptor())
+: tableDescriptor(createTableDescriptor()), columnDescriptor(createColumnDescriptor()), indexDescriptor(createIndexDescriptor())
 {
 }
 
@@ -34,6 +34,9 @@ RC RelationManager::createCatalog()
     rc = rbfm->createFile(getFileName(COLUMNS_TABLE_NAME));
     if (rc)
         return rc;
+    rc = rbfm->createFile(getFileName(INDEXES_TABLE_NAME));
+    if (rc)
+        return rc;
 
     // Add table entries for both Tables and Columns
     rc = insertTable(TABLES_TABLE_ID, 1, TABLES_TABLE_NAME);
@@ -42,13 +45,18 @@ RC RelationManager::createCatalog()
     rc = insertTable(COLUMNS_TABLE_ID, 1, COLUMNS_TABLE_NAME);
     if (rc)
         return rc;
-
+    rc = insertTable(INDEXES_TABLE_ID, 1, INDEXES_TABLE_NAME);
+    if (rc)
+        return rc;
 
     // Add entries for tables and columns to Columns table
     rc = insertColumns(TABLES_TABLE_ID, tableDescriptor);
     if (rc)
         return rc;
     rc = insertColumns(COLUMNS_TABLE_ID, columnDescriptor);
+    if (rc)
+        return rc;
+    rc = insertColumns(INDEXES_TABLE_ID, indexDescriptor);
     if (rc)
         return rc;
 
@@ -67,6 +75,10 @@ RC RelationManager::deleteCatalog()
         return rc;
 
     rc = rbfm->destroyFile(getFileName(COLUMNS_TABLE_NAME));
+    if (rc)
+        return rc;
+
+    rc = rbfm->destroyFile(getFileName(INDEXES_TABLE_NAME));
     if (rc)
         return rc;
 
@@ -101,6 +113,8 @@ RC RelationManager::createTable(const string &tableName, const vector<Attribute>
     return SUCCESS;
 }
 
+// TODO:
+// 1) Delete index catalog rows for this table id and their associated btree files
 RC RelationManager::deleteTable(const string &tableName)
 {
     RecordBasedFileManager *rbfm = RecordBasedFileManager::instance();
@@ -433,6 +447,16 @@ string RelationManager::getFileName(const string &tableName)
     return tableName + string(TABLE_FILE_EXTENSION);
 }
 
+string RelationManager::indexFileName(const string &tableName, const char *indexName)
+{
+    return tableName + "_" + string(indexName) + string(INDEX_FILE_EXTENSION);
+}
+
+string RelationManager::indexFileName(const string &tableName, const string &indexName)
+{
+    return tableName + "_" + indexName + string(INDEX_FILE_EXTENSION);
+}
+
 vector<Attribute> RelationManager::createTableDescriptor()
 {
     vector<Attribute> td;
@@ -492,6 +516,24 @@ vector<Attribute> RelationManager::createColumnDescriptor()
     cd.push_back(attr);
 
     return cd;
+}
+
+vector<Attribute> RelationManager::createIndexDescriptor()
+{
+    vector<Attribute> id;
+
+    Attribute attr;
+    attr.name = INDEXES_COL_TABLE_ID;
+    attr.type = TypeInt;
+    attr.length = (AttrLength)INT_SIZE;
+    id.push_back(attr);
+
+    attr.name = INDEXES_COL_COLUMN_NAME;
+    attr.type = TypeVarChar;
+    attr.length = (AttrLength)INDEXES_COL_COLUMN_NAME_SIZE;
+    id.push_back(attr);
+
+    return id;
 }
 
 // Creates the Tables table entry for the given id and tableName
@@ -562,6 +604,26 @@ void RelationManager::prepareColumnsRecordData(int32_t id, int32_t pos, Attribut
     offset += INT_SIZE;
 }
 
+void RelationManager::prepareIndexesRecordData(int32_t tid, const string &attributeName, void *data)
+{
+    unsigned offset = 0;
+    int32_t attr_len = attributeName.length();
+
+    // None will ever be null
+    char null = 0;
+
+    memcpy((char*) data + offset, &null, 1);
+    offset += 1;
+
+    memcpy((char*) data + offset, &tid, INT_SIZE);
+    offset += INT_SIZE;
+
+    memcpy((char*) data + offset, &attr_len, VARCHAR_LENGTH_SIZE);
+    offset += VARCHAR_LENGTH_SIZE;
+    memcpy((char*) data + offset, attributeName.c_str(), attr_len);
+    offset += attr_len;
+}
+
 // Insert the given columns into the Columns table
 RC RelationManager::insertColumns(int32_t id, const vector<Attribute> &recordDescriptor)
 {
@@ -607,6 +669,26 @@ RC RelationManager::insertTable(int32_t id, int32_t system, const string &tableN
 
     rbfm->closeFile(fileHandle);
     free (tableData);
+    return rc;
+}
+
+RC RelationManager::insertIndex(int32_t tid, const string &attributeName)
+{
+    FileHandle fileHandle;
+    RID rid;
+    RC rc;
+    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance();
+
+    rc = rbfm->openFile(getFileName(INDEXES_TABLE_NAME), fileHandle);
+    if (rc)
+        return rc;
+
+    void *indexData = malloc (INDEXES_RECORD_DATA_SIZE);
+    prepareIndexesRecordData(tid, attributeName, indexData);
+    rc = rbfm->insertRecord(fileHandle, indexDescriptor, indexData, rid);
+
+    rbfm->closeFile(fileHandle);
+    free (indexData);
     return rc;
 }
 
@@ -738,6 +820,50 @@ RC RelationManager::isSystemTable(bool &system, const string &tableName)
     return rc;   
 }
 
+// RC RelationManager::tableExists(bool &exists, const string &tableName, int32_t &tableId)
+// {
+//     RecordBasedFileManager *rbfm = RecordBasedFileManager::instance();
+//     FileHandle fileHandle;
+//     RC rc;
+
+//     rc = rbfm->openFile(getFileName(TABLES_TABLE_NAME), fileHandle);
+//     if (rc)
+//         return rc;
+
+//     // We only care about system column
+//     vector<string> projection;
+//     projection.push_back(TABLES_COL_TABLE_ID);
+
+//     // Set up value to be tableName in API format (without null indicator)
+//     void *value = malloc(5 + TABLES_COL_TABLE_NAME_SIZE);
+//     int32_t name_len = tableName.length();
+//     memcpy(value, &name_len, INT_SIZE);
+//     memcpy((char*)value + INT_SIZE, tableName.c_str(), name_len);
+
+//     // Find table whose table-name is equal to tableName
+//     RBFM_ScanIterator rbfm_si;
+//     rc = rbfm->scan(fileHandle, tableDescriptor, TABLES_COL_TABLE_NAME, EQ_OP, value, projection, rbfm_si);
+
+//     RID rid;
+//     void *data = malloc (1 + INT_SIZE);
+//     if ((rc = rbfm_si.getNextRecord(rid, data)) == SUCCESS) {
+
+//         int32_t tid;
+//         fromAPI(tid, data);
+//         tableId = tid;
+
+//         exists = true;
+//     } else {
+//         exists = false;
+//     }
+
+//     free(data);
+//     free(value);
+//     rbfm->closeFile(fileHandle);
+//     rbfm_si.close();
+//     return rc;   
+// }
+
 void RelationManager::toAPI(const string &str, void *data)
 {
     int32_t len = str.length();
@@ -856,14 +982,180 @@ RC RM_ScanIterator::close()
     return SUCCESS;
 }
 
+// TODO:
+// 1) Make sure table isn't system and exists
+// 2) Make sure attribute exists on table
+// 3) Make sure index catalog doesnt have this (table, col) already
+// 4) insertIndex() and IX::createIndex() loop to make b-tree index file
 RC RelationManager::createIndex(const string &tableName, const string &attributeName)
 {
-	return -1;
+    bool isSystem;
+    RC rc = isSystemTable(isSystem, tableName);
+    if (rc)
+        return rc;
+    if (isSystem)
+        return RM_CANNOT_MOD_SYS_TBL;
+
+    vector<Attribute> recordDescriptor;
+    rc = getAttributes(tableName, recordDescriptor);
+    if (rc)
+        return rc;
+
+    bool colExists = false;
+    int colPos = -1;
+    for(unsigned int i = 0; i < recordDescriptor.size(); ++i) {
+        if(recordDescriptor[i].name == attributeName)  {
+            colExists = true;  
+            colPos = i;
+            break;
+        }
+    }
+
+    if(!colExists)
+        return -1;
+
+    int32_t id;
+    rc = getTableID(tableName, id);
+    if (rc)
+        return rc;
+
+    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance();
+    FileHandle fileHandle;
+    rc = rbfm->openFile(getFileName(INDEXES_TABLE_NAME), fileHandle);
+    if (rc)
+        return rc;
+
+    RBFM_ScanIterator rbfm_si;
+    vector<string> projection;
+    projection.push_back(INDEXES_COL_COLUMN_NAME);
+
+    void *value = &id;
+    rc = rbfm->scan(fileHandle, indexDescriptor, INDEXES_COL_TABLE_ID, EQ_OP, value, projection, rbfm_si);
+
+    RID rid;
+    void *data = malloc(INDEXES_RECORD_DATA_SIZE);
+    bool rowExists = false;
+    while ((rc = rbfm_si.getNextRecord(rid, data)) == SUCCESS)
+    {
+        unsigned offset = 1;
+
+        int32_t colLen;
+        memcpy(&colLen, (char*) data + offset, VARCHAR_LENGTH_SIZE);
+        offset += VARCHAR_LENGTH_SIZE;
+
+        char col[colLen + 1];
+        col[colLen] = '\0';
+        memcpy(col, (char*) data + offset, colLen);
+
+        if(strcmp(col, attributeName.c_str()) == 0) {
+            rowExists = true; break;
+        }
+    }
+
+    rbfm_si.close();
+    rbfm->closeFile(fileHandle);
+    free(data);
+
+    if(rowExists)
+        return -1;
+
+    if (rc != RBFM_EOF)
+        return rc;
+
+    rc = insertIndex(id, attributeName);
+    if (rc)
+        return rc;
+
+    IXFileHandle ixfileHandle;
+    IndexManager *im = IndexManager::instance();
+
+    rc = im->createFile(indexFileName(tableName, attributeName));
+    if (rc)
+        return rc;
+
+    rc = im->openFile(indexFileName(tableName, attributeName), ixfileHandle);
+    if (rc)
+        return rc;
+
+    rc = rbfm->openFile(getFileName(tableName), fileHandle);
+    if (rc)
+        return rc;
+
+    projection.clear();
+    projection.push_back(attributeName);
+
+    value = &id;
+    rc = rbfm->scan(fileHandle, recordDescriptor, attributeName, NO_OP, NULL, projection, rbfm_si);
+
+    data = malloc(1 + recordDescriptor[colPos].length);
+    while ((rc = rbfm_si.getNextRecord(rid, data)) == SUCCESS)
+    {
+
+        char null;
+        memcpy(&null, data, 1);
+        if (null)
+            continue;
+
+        rc = im->insertEntry(ixfileHandle, recordDescriptor[colPos], (char*) data + 1, rid);
+        if (rc)
+            return -1;
+    }
+
+    if (rc != RBFM_EOF)
+        return rc;
+
+    rbfm_si.close();
+    rbfm->closeFile(fileHandle);
+    im->closeFile(ixfileHandle);
+    free(data);
+
+	return SUCCESS;
 }
 
+// TODO:
+// 1) Delete tuples from indexes table 
+// 2) Delete file index from IX
 RC RelationManager::destroyIndex(const string &tableName, const string &attributeName)
 {
-	return -1;
+    RC rc = 0;
+
+    int32_t id;
+    rc = getTableID(tableName, id);
+    if (rc)
+        return rc;
+
+    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance();
+    FileHandle fileHandle;
+    rc = rbfm->openFile(getFileName(INDEXES_TABLE_NAME), fileHandle);
+    if (rc)
+        return rc;
+
+    RBFM_ScanIterator rbfm_si;
+    vector<string> projection;
+    projection.push_back(INDEXES_COL_COLUMN_NAME);
+
+    void *value = &id;
+    rc = rbfm->scan(fileHandle, indexDescriptor, INDEXES_COL_TABLE_ID, EQ_OP, value, projection, rbfm_si);
+
+    RID rid;
+    while((rc = rbfm_si.getNextRecord(rid, NULL)) == SUCCESS)
+    {
+        rc = rbfm->deleteRecord(fileHandle, indexDescriptor, rid);
+        if (rc)
+            return rc;
+    }
+    if (rc != RBFM_EOF)
+        return rc;
+
+    rbfm->closeFile(fileHandle);
+    rbfm_si.close();
+
+    IndexManager *im = IndexManager::instance();
+    rc = im->destroyFile(indexFileName(tableName, attributeName));
+    if (rc)
+        return rc;
+
+	return SUCCESS;
 }
 
 RC RelationManager::indexScan(const string &tableName,
@@ -877,13 +1169,34 @@ RC RelationManager::indexScan(const string &tableName,
 	return -1;
 }
 
-RC getNextEntry(RID &rid, void *key) {
+RC RM_IndexScanIterator::getNextEntry(RID &rid, void *key) {
    return RM_EOF;
 }  
 
 
-RC close() {
+RC RM_IndexScanIterator::close() {
    return -1;
 }
 
 
+
+
+    // // 1) Make sure table exists
+    // bool tableExists;
+    // int tableId;
+
+    // RC rc = tableExists(tableExists, tableName, tableId);
+    // if (rc)
+    //     return rc;
+
+    // if(!tableExists)
+    //     return -1;
+
+    // // 2) Make sure attribute exists
+    // bool columnExists;
+    // rc = columnExists(columnExists, tableId, attributeName);
+    // if (rc)
+    //     return rc;
+
+    // if(!columnExists)
+    //     return -1;
