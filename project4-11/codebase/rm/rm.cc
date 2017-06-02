@@ -1325,6 +1325,8 @@ RC RelationManager::indexScan(const string &tableName,
                       bool highKeyInclusive,
                       RM_IndexScanIterator &rm_IndexScanIterator)
 {
+    rm_IndexScanIterator.ix_iter = *(new IX_ScanIterator());
+
     vector<Attribute> recordDescriptor;
     RC rc = getAttributes(tableName, recordDescriptor);
     if (rc)
@@ -1344,6 +1346,7 @@ RC RelationManager::indexScan(const string &tableName,
         return -1;
 
     IndexManager *im = IndexManager::instance();
+    rm_IndexScanIterator.ix_iter.fileHandle = new IXFileHandle();
     rc = im->openFile(indexFileName(tableName, attributeName), *rm_IndexScanIterator.ix_iter.fileHandle);
     if (rc)
         return rc;
