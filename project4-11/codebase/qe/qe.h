@@ -75,9 +75,6 @@ class Iterator {
                     return size;  
             }
             return 0;
-<<<<<<< HEAD
-        };   
-=======
         };    
         
         int getSize(const vector<Attribute> &attrs, const void* data) {
@@ -95,7 +92,6 @@ class Iterator {
             }
             return offset;
         };
->>>>>>> 54f4f4baa0a71e5e6aa5d2d45c43bb3f83f26a26
         
         RC compare(CompOp op, AttrType type, void* left, void* right) {            
             switch (type) {
