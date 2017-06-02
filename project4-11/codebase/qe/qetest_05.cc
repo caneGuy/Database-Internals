@@ -42,9 +42,12 @@ RC testCase_5() {
 	bool nullBit = false;
 	
 	int valueB = 0;
+        cout << "test" << endl;
 	int valueD = 0;
 
 	while (filter->getNextTuple(data) != QE_EOF) {
+        
+        cout << "test" << endl;
 		int offset = 0;
 		
 		// is an attribute B NULL?
