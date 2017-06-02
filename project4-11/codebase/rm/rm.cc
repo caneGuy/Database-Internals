@@ -1325,16 +1325,53 @@ RC RelationManager::indexScan(const string &tableName,
                       bool highKeyInclusive,
                       RM_IndexScanIterator &rm_IndexScanIterator)
 {
-	return -1;
+    vector<Attribute> recordDescriptor;
+    RC rc = getAttributes(tableName, recordDescriptor);
+    if (rc)
+        return rc;
+
+    bool colExists = false;
+    int colPos = -1;
+    for(unsigned int i = 0; i < recordDescriptor.size(); ++i) {
+        if(recordDescriptor[i].name == attributeName)  {
+            colExists = true;  
+            colPos = i;
+            break;
+        }
+    }
+
+    if(!colExists)
+        return -1;
+
+    IndexManager *im = IndexManager::instance();
+    rc = im->openFile(indexFileName(tableName, attributeName), *rm_IndexScanIterator.ix_iter.fileHandle);
+    if (rc)
+        return rc;
+
+    rc = rm_IndexScanIterator.ix_iter.initialize(*rm_IndexScanIterator.ix_iter.fileHandle, recordDescriptor[colPos], lowKey, highKey, lowKeyInclusive, highKeyInclusive);
+    if(rc)
+        return rc;
+
+	return SUCCESS;
 }
 
 RC RM_IndexScanIterator::getNextEntry(RID &rid, void *key) {
-   return RM_EOF;
+    return ix_iter.getNextEntry(rid, key);
 }  
 
 
 RC RM_IndexScanIterator::close() {
-   return -1;
+    IndexManager *im = IndexManager::instance();
+
+    RC rc = ix_iter.close();
+    if (rc)
+        return rc;
+
+    rc = im->closeFile(*ix_iter.fileHandle);
+    if (rc)
+        return rc;
+
+    return SUCCESS;
 }
 
 
