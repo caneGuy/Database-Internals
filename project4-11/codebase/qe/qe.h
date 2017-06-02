@@ -69,10 +69,10 @@ class Iterator {
                     memcpy((char*)value + sizeof(int), (char*)data + offset + sizeof(int), size);
                     size += sizeof(int);
                 } else 
-                    memcpy(value, (char*)data + offset, sizeof(int));       
-                offset += size;                
+                    memcpy(value, (char*)data + offset, sizeof(int));                 
                 if (name == attrs[i].name)
-                    return size;  
+                    return size;     
+                offset += size;   
             }
             return 0;
         };    
@@ -311,21 +311,18 @@ class Filter : public Iterator {
         Filter(Iterator *input,               // Iterator of input R
                const Condition &condition     // Selection condition
         ){
-            cout << "in filter" << endl;
             this->iterator = input;
             assert(condition.bRhsIsAttr == false && "didn't think this makes any sense");
             this->condition = condition;
             this->attrs.clear();
             input->getAttributes(this->attrs);
             this->buffer = malloc(PAGE_SIZE);
-            cout << "in filter" << endl;
         };
         ~Filter(){
             free(this->buffer);
         };
 
         RC getNextTuple(void *data) { 
-            cout << "in next tuple" << endl;
             while (true) {
                 if (iterator->getNextTuple(data) == QE_EOF)
                     return QE_EOF;
