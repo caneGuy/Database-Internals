@@ -18,7 +18,7 @@
 #include "../ix/ix.h"
 
 #define QE_EOF (-1)  // end of the index scan
-#define IS_NULL (5)  // column entry is null
+#define IS_NULL (-1)  // column entry is null
 
 using namespace std;
 
@@ -51,7 +51,28 @@ class Iterator {
         virtual void getAttributes(vector<Attribute> &attrs) const = 0;
         virtual ~Iterator() {};
         
-    protected:
+    protected:                
+        RC getValue(const string name, const vector<Attribute> &attrs, const void* data, void* value) {
+            int offset = ceil(attrs.size() / 8.0);
+            for (size_t i = 0; i < attrs.size(); ++i) {
+                char target = *((char*)data + i/8);
+                if (target & (1<<(7-i%8)))
+                    return IS_NULL;
+                int size = sizeof(int);
+                if (attrs[i].type == TypeVarChar) {
+                    memcpy(&size, (char*)data + offset, sizeof(int));
+                    memcpy((char*)value, &size, sizeof(int));
+                    memcpy((char*)value + sizeof(int), (char*)data + offset + sizeof(int), size);
+                    size += sizeof(int);
+                } else 
+                    memcpy(value, (char*)data + offset, sizeof(int));                  
+                if (name == attrs[i].name)
+                    return size;       
+                offset += size;
+            }
+            return 0;
+        };
+        
         RC compare(CompOp op, AttrType type, void* left, void* right) {            
             switch (type) {
                 case TypeVarChar: {
@@ -64,8 +85,6 @@ class Iterator {
                     char c_right[size + 1];
                     memcpy(c_right, (char*)right + 4, size);
                     c_right[size] = 0; 
-                    // string left = (c_left);
-                    // return 0;
                     return comp<string>(op, c_left, c_right);
                 }
                 case TypeInt: return comp<int>(op, *(int*)left, *(int*)right);
@@ -75,35 +94,14 @@ class Iterator {
             }            
         };
                 
-        RC getValue(const string name, const vector<Attribute> &attrs, const void* data, void* value) {
-            int offset = ceil(attrs.size() / 8.0);
-            for (size_t i = 0; i < attrs.size(); ++i) {
-                char target = *((char*)data + i/8);
-                if (target & (1<<(7-i%8)))
-                    return IS_NULL;
-                int size;
-                if (attrs[i].type == TypeVarChar) {
-                    memcpy(&size, (char*)data + offset, sizeof(int));
-                    memcpy(value, (char*)data + offset + sizeof(int), size);
-                    offset += size + sizeof(int);
-                } else {
-                    memcpy(value, (char*)data + offset, sizeof(int));
-                    offset += sizeof(int);
-                }                    
-                if (name == attrs[i].name)
-                    return 0;                
-            }
-            return -1;
-        };
-                
         template <class T>
         bool comp (CompOp op, T left, T right) {
             switch (op) {
                 case EQ_OP: return (left == right);
-                case LT_OP: return (left <= right); 
-                case GT_OP: return (left >= right); 
-                case LE_OP: return (left <  right); 
-                case GE_OP: return (left >  right); 
+                case LT_OP: return (left <  right); 
+                case GT_OP: return (left >  right); 
+                case LE_OP: return (left <= right); 
+                case GE_OP: return (left >= right); 
                 case NE_OP: return (left != right);  
                 case NO_OP: return true;
                 default: assert(false && "not a valid compop in comparision");
