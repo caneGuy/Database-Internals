@@ -877,4 +877,13 @@ RC RelationManager::indexScan(const string &tableName,
 	return -1;
 }
 
+RC getNextEntry(RID &rid, void *key) {
+   return RM_EOF;
+}  
+
+
+RC close() {
+   return -1;
+}
+
 

@@ -419,6 +419,7 @@ int populateLeftTable() {
 		prepareLeftTuple(attrs.size(), nullsIndicator, a, b, c, buf);
 
 		rc = rm->insertTuple("left", buf, rid);
+        cout << i << endl;
 		if (rc != success) {
 			goto clean_up;
 		}
