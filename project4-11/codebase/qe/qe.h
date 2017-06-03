@@ -278,9 +278,6 @@ class IndexScan : public Iterator
             iter->close();
             delete iter;
             
-            if (highKey != NULL)
-                cout << *(int*) highKey << endl;
-            
             iter = new RM_IndexScanIterator();
             rm.indexScan(tableName, attrName, lowKey, highKey, lowKeyInclusive,
                            highKeyInclusive, *iter);

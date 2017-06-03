@@ -13,7 +13,7 @@ RC testCase_9() {
 	// 1. INLJoin -- on TypeReal Attribute
 	// SELECT * from left, right WHERE left.C = right.C
 	cerr << endl << "***** In QE Test Case 9 *****" << endl;
-   
+
 	RC rc = success;
 
 	// Prepare the iterator and condition
@@ -38,13 +38,12 @@ RC testCase_9() {
 	bool nullBit = false;
 	
 	while (inlJoin->getNextTuple(data) != QE_EOF) {
-        
 		int offset = 0;
 
 		// Is an attribute left.A NULL?
 		nullBit = *(unsigned char *)((char *)data) & (1 << 7);
 		if (nullBit) {
-			cerr << endl << "***** A returned value is not correct. ***1**" << endl;
+			cerr << endl << "***** A returned value is not correct. *****" << endl;
 			goto clean_up;
 		}
 		// Print left.A
@@ -54,7 +53,7 @@ RC testCase_9() {
 		// Is an attribute left.B NULL?
 		nullBit = *(unsigned char *)((char *)data) & (1 << 6);
 		if (nullBit) {
-			cerr << endl << "***** A returned value is not correct. ***2**" << endl;
+			cerr << endl << "***** A returned value is not correct. *****" << endl;
 			goto clean_up;
 		}
 		// Print left.B
@@ -64,7 +63,7 @@ RC testCase_9() {
 		// Is an attribute left.C NULL?
 		nullBit = *(unsigned char *)((char *)data) & (1 << 5);
 		if (nullBit) {
-			cerr << endl << "***** A returned value is not correct. ***3**" << endl;
+			cerr << endl << "***** A returned value is not correct. *****" << endl;
 			goto clean_up;
 		}
 		// Print left.C
@@ -74,7 +73,7 @@ RC testCase_9() {
 		// Is an attribute right.B NULL?
 		nullBit = *(unsigned char *)((char *)data) & (1 << 4);
 		if (nullBit) {
-			cerr << endl << "***** A returned value is not correct. ***4**" << endl;
+			cerr << endl << "***** A returned value is not correct. *****" << endl;
 			goto clean_up;
 		}
 		// Print right.B
@@ -84,7 +83,7 @@ RC testCase_9() {
 		// Is an attribute right.C NULL?
 		nullBit = *(unsigned char *)((char *)data) & (1 << 3);
 		if (nullBit) {
-			cerr << endl << "***** A returned value is not correct. **5***" << endl;
+			cerr << endl << "***** A returned value is not correct. *****" << endl;
 			goto clean_up;
 		}
 		// Print right.C
@@ -92,7 +91,7 @@ RC testCase_9() {
 		cerr << "  right.C " << valueC;
 		offset += sizeof(float);
 		if (valueC < 50.0 || valueC > 124.0) {
-			cerr << endl << "***** A returned value is not correct. ***6**" << endl;
+			cerr << endl << "***** A returned value is not correct. *****" << endl;
 			rc = fail;
 			goto clean_up;
 		}
@@ -100,7 +99,7 @@ RC testCase_9() {
 		// Is an attribute right.C NULL?
 		nullBit = *(unsigned char *)((char *)data) & (1 << 2);
 		if (nullBit) {
-			cerr << endl << "***** A returned value is not correct. ***7**" << endl;
+			cerr << endl << "***** A returned value is not correct. *****" << endl;
 			goto clean_up;
 		}
 		// Print right.D
@@ -112,10 +111,10 @@ RC testCase_9() {
 	}
 
 	if (expectedResultCnt != actualResultCnt) {
-		cerr << "***** The number of returned tuple is not correct. ***9**" << endl;
+		cerr << "***** The number of returned tuple is not correct. *****" << endl;
 		rc = fail;
 	}
-  
+
 clean_up:
 	delete inlJoin;
 	delete leftIn;

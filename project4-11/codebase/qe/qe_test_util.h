@@ -419,7 +419,6 @@ int populateLeftTable() {
 		prepareLeftTuple(attrs.size(), nullsIndicator, a, b, c, buf);
 
 		rc = rm->insertTuple("left", buf, rid);
-        cout << i << endl;
 		if (rc != success) {
 			goto clean_up;
 		}
@@ -683,16 +682,6 @@ int deleteAndCreateCatalog() {
   assert (rc == success && "Creating the Catalog should not fail.");
   
   return rc;
-}
-
-
-void printTree(string file, Attribute attr) {
-    
-    IXFileHandle ixfileHandle;
-
-    RC rc = im->openFile(file, ixfileHandle);
-    
-    im->printBtree(ixfileHandle, attr);
 }
 
 #endif

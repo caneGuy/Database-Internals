@@ -74,14 +74,14 @@ RC INLJoin::getNextTuple(void *data){
                     continue;
                 else
                     needNewOuterValue = false;
-            rbfm->printRecord(outerAttrs, outerData);
+            // rbfm->printRecord(outerAttrs, outerData);
         }
         if (inner->getNextTuple(innerData) == QE_EOF) {
             inner->setIterator();
             needNewOuterValue = true;
             continue;
         }
-        rbfm->printRecord(innerAttrs, innerData);
+        // rbfm->printRecord(innerAttrs, innerData);
         // assuming we don't want the row if attr is null
         if (getValue(condition.rhsAttr, innerAttrs, innerData, data) == IS_NULL)
             continue;
@@ -91,7 +91,7 @@ RC INLJoin::getNextTuple(void *data){
     concatData(outerAttrs, outerData, innerAttrs, innerData, data);
     vector<Attribute> temp;
     this->getAttributes(temp);
-    rbfm->printRecord(temp, data);
+    // rbfm->printRecord(temp, data);
     return SUCCESS;
 }
 

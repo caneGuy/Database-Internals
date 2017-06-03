@@ -41,10 +41,8 @@ RC testCase_3() {
 	
 	int valueA = 0;
 	float valueC = 0.0;
-    
 	
 	while (filter->getNextTuple(data) != QE_EOF) {
-    
 		int offset = 0;
 		// Print left.A
 		// Null indicators should be placed in the beginning.

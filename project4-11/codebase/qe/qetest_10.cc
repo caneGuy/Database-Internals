@@ -19,62 +19,24 @@ int testCase_10() {
 
 	RC rc = success;
 	// Create Filter
-	IndexScan *leftIn = new IndexScan(*rm, "right", "C");
+	IndexScan *leftIn = new IndexScan(*rm, "left", "B");
 
-	float compVal = 120;
+	int compVal = 75;
 
 	Condition cond_f;
-	cond_f.lhsAttr = "left.B"; 
-	cond_f.op = LE_OP; 
+	cond_f.lhsAttr = "left.B";
+	cond_f.op = LT_OP;
 	cond_f.bRhsIsAttr = false;
 	Value value;
 	value.type = TypeInt;
 	value.data = malloc(bufSize);
-	*(float *) value.data = compVal;
+	*(int *) value.data = compVal;
 	cond_f.rhsValue = value;
-    
-    // int test = 0;
-    
-    int x = 100;
-    void* ptr = &x;
- 
-	leftIn->setIterator(value.data, NULL, true, true);  
 
-    
-    Attribute attr;
-    attr.name = "B";
-	attr.type = TypeReal;
-	attr.length = 4;
-    //
-    
-    printTree("right_C.i", attr);
-    
-    // leftIn->setIterator(NULL, NULL, true, true); 
-	// Go over the data through iterator
-	void *data = malloc(bufSize);
-	bool nullBit = false;
-    
-    vector<Attribute> attrs;
-    leftIn->getAttributes(attrs);
-    
-    for (auto &attr : attrs) {
-        cout << attr.name << endl;
-    }
-    
-    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); 
-    while (leftIn->getNextTuple(data) != QE_EOF) {
-        cout << "test" << endl;
-        rbfm->printRecord(attrs, data);
-    }
-    
-    return 0;
-    
-    
-    
+	leftIn->setIterator(NULL, value.data, true, false);
 	Filter *filter = new Filter(leftIn, cond_f); //left.B: 10~74, left.C: 50.0~114.0
-   
-    
-	// Create Project 
+
+	// Create Project
 	vector<string> attrNames;
 	attrNames.push_back("left.A");
 	attrNames.push_back("left.C");
@@ -85,7 +47,7 @@ int testCase_10() {
 	cond_j.op = EQ_OP;
 	cond_j.bRhsIsAttr = true;
 	cond_j.rhsAttr = "right.C";
- 
+
 	// Create Join
 	IndexScan *rightIn = NULL;
 	Iterator *join = NULL;
@@ -96,6 +58,9 @@ int testCase_10() {
 	int actualResultCnt = 0;
 	float valueC = 0;
 
+	// Go over the data through iterator
+	void *data = malloc(bufSize);
+	bool nullBit = false;
 
 	while (join->getNextTuple(data) != QE_EOF) {
 		int offset = 0;

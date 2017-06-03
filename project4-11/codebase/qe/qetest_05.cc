@@ -19,26 +19,6 @@ RC testCase_5() {
 	float compVal = 110.0;
 	float valueC = 0;
 
-    
-        
-    
-	// Go over the data through iterator
-	void *data = malloc(bufSize);
-    
-    // vector<Attribute> attrs;
-    // is->getAttributes(attrs);
-    
-    // for (auto &attr : attrs) {
-        // cout << attr.name << endl;
-    // }
-    
-    // RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); 
-    // while (is->getNextTuple(data) != QE_EOF) {
-        // cout << "test" << endl;
-        // rbfm->printRecord(attrs, data);
-    // }
-    
-    
 	// Set up condition
 	Condition cond;
 	cond.lhsAttr = "right.C";
@@ -57,17 +37,14 @@ RC testCase_5() {
 	Filter *filter = new Filter(is, cond);
 
 	// Go over the data through iterator
-	// void *data = malloc(bufSize);
+	void *data = malloc(bufSize);
 
 	bool nullBit = false;
 	
 	int valueB = 0;
-        cout << "test" << endl;
 	int valueD = 0;
 
 	while (filter->getNextTuple(data) != QE_EOF) {
-        
-        cout << "test" << endl;
 		int offset = 0;
 		
 		// is an attribute B NULL?

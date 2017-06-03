@@ -14,11 +14,11 @@ RC testCase_6() {
 	// SELECT C,D FROM RIGHT
 	cout << endl << "***** In QE Test Case 6 *****" << endl;
 
-	RC rc = success; 
+	RC rc = success;
 	TableScan *ts = new TableScan(*rm, "right");
 
 	vector<string> attrNames;
-	attrNames.push_back("right.B");
+	attrNames.push_back("right.C");
 	attrNames.push_back("right.D");
 
 	int expectedResultCnt = 100;
@@ -42,10 +42,10 @@ RC testCase_6() {
 			cout << endl << "***** A returned value is not correct. *****" << endl;
 			goto clean_up;
 		}
-		valueC = *(int *)((char *)data+1+offset);
+		valueC = *(float *)((char *)data+1+offset);
 		
 		// Print right.C
-		cout << "right.B " << valueC;
+		cout << "right.C " << valueC;
 		offset += sizeof(float);
 
 
