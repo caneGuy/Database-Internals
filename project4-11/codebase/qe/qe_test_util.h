@@ -685,6 +685,16 @@ int deleteAndCreateCatalog() {
   return rc;
 }
 
+
+void printTree(string file, Attribute attr) {
+    
+    IXFileHandle ixfileHandle;
+
+    RC rc = im->openFile(file, ixfileHandle);
+    
+    im->printBtree(ixfileHandle, attr);
+}
+
 #endif
 
 

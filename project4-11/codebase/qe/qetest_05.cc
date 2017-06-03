@@ -25,18 +25,18 @@ RC testCase_5() {
 	// Go over the data through iterator
 	void *data = malloc(bufSize);
     
-    vector<Attribute> attrs;
-    is->getAttributes(attrs);
+    // vector<Attribute> attrs;
+    // is->getAttributes(attrs);
     
-    for (auto &attr : attrs) {
-        cout << attr.name << endl;
-    }
+    // for (auto &attr : attrs) {
+        // cout << attr.name << endl;
+    // }
     
-    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); 
-    while (is->getNextTuple(data) != QE_EOF) {
-        cout << "test" << endl;
-        rbfm->printRecord(attrs, data);
-    }
+    // RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); 
+    // while (is->getNextTuple(data) != QE_EOF) {
+        // cout << "test" << endl;
+        // rbfm->printRecord(attrs, data);
+    // }
     
     
 	// Set up condition

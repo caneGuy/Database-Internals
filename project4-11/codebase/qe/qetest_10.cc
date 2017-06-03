@@ -21,7 +21,7 @@ int testCase_10() {
 	// Create Filter
 	IndexScan *leftIn = new IndexScan(*rm, "right", "C");
 
-	int compVal = 75;
+	float compVal = 120;
 
 	Condition cond_f;
 	cond_f.lhsAttr = "left.B"; 
@@ -30,12 +30,24 @@ int testCase_10() {
 	Value value;
 	value.type = TypeInt;
 	value.data = malloc(bufSize);
-	*(int *) value.data = compVal;
+	*(float *) value.data = compVal;
 	cond_f.rhsValue = value;
     
     // int test = 0;
+    
+    int x = 100;
+    void* ptr = &x;
  
-	leftIn->setIterator(NULL, &compVal, true, false);     
+	leftIn->setIterator(value.data, NULL, true, true);  
+
+    
+    Attribute attr;
+    attr.name = "B";
+	attr.type = TypeReal;
+	attr.length = 4;
+    //
+    
+    printTree("right_C.i", attr);
     
     // leftIn->setIterator(NULL, NULL, true, true); 
 	// Go over the data through iterator

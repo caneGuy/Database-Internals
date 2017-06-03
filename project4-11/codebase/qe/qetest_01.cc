@@ -35,6 +35,14 @@ int testCase_1() {
 		cerr << "***** createIndexforLeftC() failed.  *****" << endl;
 		return rc;
 	}
+    
+    Attribute attr;
+    attr.name = "B";
+	attr.type = TypeInt;
+	attr.length = 4;
+    
+    printTree("left_B.i", attr);
+    
 	return rc;
 }
 
