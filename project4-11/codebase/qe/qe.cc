@@ -13,11 +13,13 @@ Project::Project(Iterator *input, const vector<string> &attrNames)
 
 RC Project::getNextTuple(void* data) {
     // check this sizeof()!
-    void* newData = malloc(sizeof(data));
-    void* value = malloc(sizeof(data));
+    void* newData = malloc(PAGE_SIZE);
+    void* value = malloc(PAGE_SIZE);
     
-    if(iter->getNextTuple(newData) == QE_EOF)
+    if(iter->getNextTuple(newData) == QE_EOF) {
+        free(newData); free(value);
         return QE_EOF;
+    }
     
     int offset = ceil(attrNames.size()/8.0);
     for (size_t i = 0; i < attrNames.size(); ++i) {

@@ -235,6 +235,7 @@ class TableScan : public Iterator
         ~TableScan()
         {
         	iter->close();
+            delete iter;
         };
 };
 
@@ -312,6 +313,7 @@ class IndexScan : public Iterator
         ~IndexScan()
         {
             iter->close();
+            delete iter;
         };
 };
 

@@ -21,7 +21,7 @@ int testCase_4() {
 	cond.op = EQ_OP;
 	cond.bRhsIsAttr = false;
 	Value value;
-	value.type = TypeVarChar;
+	value.type = TypeVarChar; 
 	value.data = malloc(bufSize);
 	int length = 12;
 	*(int *) ((char *) value.data) = length;
