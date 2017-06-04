@@ -18,7 +18,7 @@ int testCase_10() {
 	cerr << endl << "***** In QE Test Case 10 *****" << endl;
 
 	RC rc = success;
-	// Create Filter
+	// Create Filter 
 	IndexScan *leftIn = new IndexScan(*rm, "left", "B");
 
 	int compVal = 75;
@@ -117,7 +117,7 @@ int testCase_10() {
 			goto clean_up;
 		}
 		// Print right.D
-		cerr << "  right.D " << *(int *) ((char *) data + offset + 1);
+		cerr << "  right.D " << *(int *) ((char *) data + offset + 1) << endl;
 		offset += sizeof(int);
 
 		memset(data, 0, bufSize);

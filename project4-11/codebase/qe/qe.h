@@ -52,7 +52,7 @@ class Iterator {
         virtual ~Iterator() {};
         
     protected:                
-        RC getValue(const string name, const vector<Attribute> &attrs, const void* data, void* value) {
+        int getValue(const string name, const vector<Attribute> &attrs, const void* data, void* value) {
             int offset = ceil(attrs.size() / 8.0);
             for (size_t i = 0; i < attrs.size(); ++i) {
                 char target = *((char*)data + i/8);
@@ -151,6 +151,7 @@ class Iterator {
             return 0;
         };  
         
+    public:
         void printData(AttrType type, void* data) {
             switch (type) {
                 case TypeVarChar: {
@@ -271,10 +272,10 @@ class IndexScan : public Iterator
         };
 
         // Start a new iterator given the new key range
-        void setIterator(void* lowKey = NULL,
-                         void* highKey = NULL,
-                         bool lowKeyInclusive = true,
-                         bool highKeyInclusive = true)
+        void setIterator(void* lowKey,
+                         void* highKey,
+                         bool lowKeyInclusive,
+                         bool highKeyInclusive)
         {
             iter->close();
             delete iter;
@@ -397,18 +398,7 @@ class BNLJoin : public Iterator {
 
 class INLJoin : public Iterator {
     // Index nested-loop join operator
-    public:
-        Iterator *outer;
-        IndexScan *inner;
-        Condition condition;
-        vector<Attribute> outerAttrs;
-        vector<Attribute> innerAttrs;
-        void* outerData;
-        void* outerValue;
-        void* innerData;
-        bool needNewOuterValue;        
-        AttrType type;
-        
+    public:        
         INLJoin(Iterator *leftIn,           // Iterator of input R
                IndexScan *rightIn,          // IndexScan Iterator of input S
                const Condition &condition   // Join condition
@@ -423,6 +413,21 @@ class INLJoin : public Iterator {
         
         // For attribute in vector<Attribute>, name it as rel.attr
         void getAttributes(vector<Attribute> &attrs) const;
+        
+    private:
+        Iterator *outer;
+        IndexScan *inner;
+        Condition condition;
+        vector<Attribute> outerAttrs;
+        vector<Attribute> innerAttrs;
+        void* outerData;
+        void* outerValue;
+        void* innerData;
+        bool inFirstNEscan;     
+        bool needNewOuterValue;
+        AttrType type;
+        
+        void initNextInnerIterator(void);
 };
 
 // Optional for everyone. 10 extra-credit points

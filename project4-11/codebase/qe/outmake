@@ -1,0 +1,1850 @@
+50
+----
+left.A    : 0
+left.B    : 10
+left.C    : 50
+----
+----
+right.B   : 45
+right.C   : 50
+right.D   : 25
+----
+----
+left.A    : 0
+left.B    : 10
+left.C    : 50
+----
+----
+right.B   : 45
+right.C   : 50
+right.D   : 25
+----
+51
+----
+left.A    : 1
+left.B    : 11
+left.C    : 51
+----
+----
+right.B   : 46
+right.C   : 51
+right.D   : 26
+----
+----
+left.A    : 1
+left.B    : 11
+left.C    : 51
+----
+----
+right.B   : 46
+right.C   : 51
+right.D   : 26
+----
+52
+----
+left.A    : 2
+left.B    : 12
+left.C    : 52
+----
+----
+right.B   : 47
+right.C   : 52
+right.D   : 27
+----
+----
+left.A    : 2
+left.B    : 12
+left.C    : 52
+----
+----
+right.B   : 47
+right.C   : 52
+right.D   : 27
+----
+53
+----
+left.A    : 3
+left.B    : 13
+left.C    : 53
+----
+----
+right.B   : 48
+right.C   : 53
+right.D   : 28
+----
+----
+left.A    : 3
+left.B    : 13
+left.C    : 53
+----
+----
+right.B   : 48
+right.C   : 53
+right.D   : 28
+----
+54
+----
+left.A    : 4
+left.B    : 14
+left.C    : 54
+----
+----
+right.B   : 49
+right.C   : 54
+right.D   : 29
+----
+----
+left.A    : 4
+left.B    : 14
+left.C    : 54
+----
+----
+right.B   : 49
+right.C   : 54
+right.D   : 29
+----
+55
+----
+left.A    : 5
+left.B    : 15
+left.C    : 55
+----
+----
+right.B   : 50
+right.C   : 55
+right.D   : 30
+----
+----
+left.A    : 5
+left.B    : 15
+left.C    : 55
+----
+----
+right.B   : 50
+right.C   : 55
+right.D   : 30
+----
+56
+----
+left.A    : 6
+left.B    : 16
+left.C    : 56
+----
+----
+right.B   : 51
+right.C   : 56
+right.D   : 31
+----
+----
+left.A    : 6
+left.B    : 16
+left.C    : 56
+----
+----
+right.B   : 51
+right.C   : 56
+right.D   : 31
+----
+57
+----
+left.A    : 7
+left.B    : 17
+left.C    : 57
+----
+----
+right.B   : 52
+right.C   : 57
+right.D   : 32
+----
+----
+left.A    : 7
+left.B    : 17
+left.C    : 57
+----
+----
+right.B   : 52
+right.C   : 57
+right.D   : 32
+----
+58
+----
+left.A    : 8
+left.B    : 18
+left.C    : 58
+----
+----
+right.B   : 53
+right.C   : 58
+right.D   : 33
+----
+----
+left.A    : 8
+left.B    : 18
+left.C    : 58
+----
+----
+right.B   : 53
+right.C   : 58
+right.D   : 33
+----
+59
+----
+left.A    : 9
+left.B    : 19
+left.C    : 59
+----
+----
+right.B   : 54
+right.C   : 59
+right.D   : 34
+----
+----
+left.A    : 9
+left.B    : 19
+left.C    : 59
+----
+----
+right.B   : 54
+right.C   : 59
+right.D   : 34
+----
+60
+----
+left.A    : 10
+left.B    : 20
+left.C    : 60
+----
+----
+right.B   : 55
+right.C   : 60
+right.D   : 35
+----
+----
+left.A    : 10
+left.B    : 20
+left.C    : 60
+----
+----
+right.B   : 55
+right.C   : 60
+right.D   : 35
+----
+61
+----
+left.A    : 11
+left.B    : 21
+left.C    : 61
+----
+----
+right.B   : 56
+right.C   : 61
+right.D   : 36
+----
+----
+left.A    : 11
+left.B    : 21
+left.C    : 61
+----
+----
+right.B   : 56
+right.C   : 61
+right.D   : 36
+----
+62
+----
+left.A    : 12
+left.B    : 22
+left.C    : 62
+----
+----
+right.B   : 57
+right.C   : 62
+right.D   : 37
+----
+----
+left.A    : 12
+left.B    : 22
+left.C    : 62
+----
+----
+right.B   : 57
+right.C   : 62
+right.D   : 37
+----
+63
+----
+left.A    : 13
+left.B    : 23
+left.C    : 63
+----
+----
+right.B   : 58
+right.C   : 63
+right.D   : 38
+----
+----
+left.A    : 13
+left.B    : 23
+left.C    : 63
+----
+----
+right.B   : 58
+right.C   : 63
+right.D   : 38
+----
+64
+----
+left.A    : 14
+left.B    : 24
+left.C    : 64
+----
+----
+right.B   : 59
+right.C   : 64
+right.D   : 39
+----
+----
+left.A    : 14
+left.B    : 24
+left.C    : 64
+----
+----
+right.B   : 59
+right.C   : 64
+right.D   : 39
+----
+65
+----
+left.A    : 15
+left.B    : 25
+left.C    : 65
+----
+----
+right.B   : 60
+right.C   : 65
+right.D   : 40
+----
+----
+left.A    : 15
+left.B    : 25
+left.C    : 65
+----
+----
+right.B   : 60
+right.C   : 65
+right.D   : 40
+----
+66
+----
+left.A    : 16
+left.B    : 26
+left.C    : 66
+----
+----
+right.B   : 61
+right.C   : 66
+right.D   : 41
+----
+----
+left.A    : 16
+left.B    : 26
+left.C    : 66
+----
+----
+right.B   : 61
+right.C   : 66
+right.D   : 41
+----
+67
+----
+left.A    : 17
+left.B    : 27
+left.C    : 67
+----
+----
+right.B   : 62
+right.C   : 67
+right.D   : 42
+----
+----
+left.A    : 17
+left.B    : 27
+left.C    : 67
+----
+----
+right.B   : 62
+right.C   : 67
+right.D   : 42
+----
+68
+----
+left.A    : 18
+left.B    : 28
+left.C    : 68
+----
+----
+right.B   : 63
+right.C   : 68
+right.D   : 43
+----
+----
+left.A    : 18
+left.B    : 28
+left.C    : 68
+----
+----
+right.B   : 63
+right.C   : 68
+right.D   : 43
+----
+69
+----
+left.A    : 19
+left.B    : 29
+left.C    : 69
+----
+----
+right.B   : 64
+right.C   : 69
+right.D   : 44
+----
+----
+left.A    : 19
+left.B    : 29
+left.C    : 69
+----
+----
+right.B   : 64
+right.C   : 69
+right.D   : 44
+----
+70
+----
+left.A    : 20
+left.B    : 30
+left.C    : 70
+----
+----
+right.B   : 65
+right.C   : 70
+right.D   : 45
+----
+----
+left.A    : 20
+left.B    : 30
+left.C    : 70
+----
+----
+right.B   : 65
+right.C   : 70
+right.D   : 45
+----
+71
+----
+left.A    : 21
+left.B    : 31
+left.C    : 71
+----
+----
+right.B   : 66
+right.C   : 71
+right.D   : 46
+----
+----
+left.A    : 21
+left.B    : 31
+left.C    : 71
+----
+----
+right.B   : 66
+right.C   : 71
+right.D   : 46
+----
+72
+----
+left.A    : 22
+left.B    : 32
+left.C    : 72
+----
+----
+right.B   : 67
+right.C   : 72
+right.D   : 47
+----
+----
+left.A    : 22
+left.B    : 32
+left.C    : 72
+----
+----
+right.B   : 67
+right.C   : 72
+right.D   : 47
+----
+73
+----
+left.A    : 23
+left.B    : 33
+left.C    : 73
+----
+----
+right.B   : 68
+right.C   : 73
+right.D   : 48
+----
+----
+left.A    : 23
+left.B    : 33
+left.C    : 73
+----
+----
+right.B   : 68
+right.C   : 73
+right.D   : 48
+----
+74
+----
+left.A    : 24
+left.B    : 34
+left.C    : 74
+----
+----
+right.B   : 69
+right.C   : 74
+right.D   : 49
+----
+----
+left.A    : 24
+left.B    : 34
+left.C    : 74
+----
+----
+right.B   : 69
+right.C   : 74
+right.D   : 49
+----
+75
+----
+left.A    : 25
+left.B    : 35
+left.C    : 75
+----
+----
+right.B   : 70
+right.C   : 75
+right.D   : 50
+----
+----
+left.A    : 25
+left.B    : 35
+left.C    : 75
+----
+----
+right.B   : 70
+right.C   : 75
+right.D   : 50
+----
+76
+----
+left.A    : 26
+left.B    : 36
+left.C    : 76
+----
+----
+right.B   : 71
+right.C   : 76
+right.D   : 51
+----
+----
+left.A    : 26
+left.B    : 36
+left.C    : 76
+----
+----
+right.B   : 71
+right.C   : 76
+right.D   : 51
+----
+77
+----
+left.A    : 27
+left.B    : 37
+left.C    : 77
+----
+----
+right.B   : 72
+right.C   : 77
+right.D   : 52
+----
+----
+left.A    : 27
+left.B    : 37
+left.C    : 77
+----
+----
+right.B   : 72
+right.C   : 77
+right.D   : 52
+----
+78
+----
+left.A    : 28
+left.B    : 38
+left.C    : 78
+----
+----
+right.B   : 73
+right.C   : 78
+right.D   : 53
+----
+----
+left.A    : 28
+left.B    : 38
+left.C    : 78
+----
+----
+right.B   : 73
+right.C   : 78
+right.D   : 53
+----
+79
+----
+left.A    : 29
+left.B    : 39
+left.C    : 79
+----
+----
+right.B   : 74
+right.C   : 79
+right.D   : 54
+----
+----
+left.A    : 29
+left.B    : 39
+left.C    : 79
+----
+----
+right.B   : 74
+right.C   : 79
+right.D   : 54
+----
+80
+----
+left.A    : 30
+left.B    : 40
+left.C    : 80
+----
+----
+right.B   : 75
+right.C   : 80
+right.D   : 55
+----
+----
+left.A    : 30
+left.B    : 40
+left.C    : 80
+----
+----
+right.B   : 75
+right.C   : 80
+right.D   : 55
+----
+81
+----
+left.A    : 31
+left.B    : 41
+left.C    : 81
+----
+----
+right.B   : 76
+right.C   : 81
+right.D   : 56
+----
+----
+left.A    : 31
+left.B    : 41
+left.C    : 81
+----
+----
+right.B   : 76
+right.C   : 81
+right.D   : 56
+----
+82
+----
+left.A    : 32
+left.B    : 42
+left.C    : 82
+----
+----
+right.B   : 77
+right.C   : 82
+right.D   : 57
+----
+----
+left.A    : 32
+left.B    : 42
+left.C    : 82
+----
+----
+right.B   : 77
+right.C   : 82
+right.D   : 57
+----
+83
+----
+left.A    : 33
+left.B    : 43
+left.C    : 83
+----
+----
+right.B   : 78
+right.C   : 83
+right.D   : 58
+----
+----
+left.A    : 33
+left.B    : 43
+left.C    : 83
+----
+----
+right.B   : 78
+right.C   : 83
+right.D   : 58
+----
+84
+----
+left.A    : 34
+left.B    : 44
+left.C    : 84
+----
+----
+right.B   : 79
+right.C   : 84
+right.D   : 59
+----
+----
+left.A    : 34
+left.B    : 44
+left.C    : 84
+----
+----
+right.B   : 79
+right.C   : 84
+right.D   : 59
+----
+85
+----
+left.A    : 35
+left.B    : 45
+left.C    : 85
+----
+----
+right.B   : 80
+right.C   : 85
+right.D   : 60
+----
+----
+left.A    : 35
+left.B    : 45
+left.C    : 85
+----
+----
+right.B   : 80
+right.C   : 85
+right.D   : 60
+----
+86
+----
+left.A    : 36
+left.B    : 46
+left.C    : 86
+----
+----
+right.B   : 81
+right.C   : 86
+right.D   : 61
+----
+----
+left.A    : 36
+left.B    : 46
+left.C    : 86
+----
+----
+right.B   : 81
+right.C   : 86
+right.D   : 61
+----
+87
+----
+left.A    : 37
+left.B    : 47
+left.C    : 87
+----
+----
+right.B   : 82
+right.C   : 87
+right.D   : 62
+----
+----
+left.A    : 37
+left.B    : 47
+left.C    : 87
+----
+----
+right.B   : 82
+right.C   : 87
+right.D   : 62
+----
+88
+----
+left.A    : 38
+left.B    : 48
+left.C    : 88
+----
+----
+right.B   : 83
+right.C   : 88
+right.D   : 63
+----
+----
+left.A    : 38
+left.B    : 48
+left.C    : 88
+----
+----
+right.B   : 83
+right.C   : 88
+right.D   : 63
+----
+89
+----
+left.A    : 39
+left.B    : 49
+left.C    : 89
+----
+----
+right.B   : 84
+right.C   : 89
+right.D   : 64
+----
+----
+left.A    : 39
+left.B    : 49
+left.C    : 89
+----
+----
+right.B   : 84
+right.C   : 89
+right.D   : 64
+----
+90
+----
+left.A    : 40
+left.B    : 50
+left.C    : 90
+----
+----
+right.B   : 85
+right.C   : 90
+right.D   : 65
+----
+----
+left.A    : 40
+left.B    : 50
+left.C    : 90
+----
+----
+right.B   : 85
+right.C   : 90
+right.D   : 65
+----
+91
+----
+left.A    : 41
+left.B    : 51
+left.C    : 91
+----
+----
+right.B   : 86
+right.C   : 91
+right.D   : 66
+----
+----
+left.A    : 41
+left.B    : 51
+left.C    : 91
+----
+----
+right.B   : 86
+right.C   : 91
+right.D   : 66
+----
+92
+----
+left.A    : 42
+left.B    : 52
+left.C    : 92
+----
+----
+right.B   : 87
+right.C   : 92
+right.D   : 67
+----
+----
+left.A    : 42
+left.B    : 52
+left.C    : 92
+----
+----
+right.B   : 87
+right.C   : 92
+right.D   : 67
+----
+93
+----
+left.A    : 43
+left.B    : 53
+left.C    : 93
+----
+----
+right.B   : 88
+right.C   : 93
+right.D   : 68
+----
+----
+left.A    : 43
+left.B    : 53
+left.C    : 93
+----
+----
+right.B   : 88
+right.C   : 93
+right.D   : 68
+----
+94
+----
+left.A    : 44
+left.B    : 54
+left.C    : 94
+----
+----
+right.B   : 89
+right.C   : 94
+right.D   : 69
+----
+----
+left.A    : 44
+left.B    : 54
+left.C    : 94
+----
+----
+right.B   : 89
+right.C   : 94
+right.D   : 69
+----
+95
+----
+left.A    : 45
+left.B    : 55
+left.C    : 95
+----
+----
+right.B   : 90
+right.C   : 95
+right.D   : 70
+----
+----
+left.A    : 45
+left.B    : 55
+left.C    : 95
+----
+----
+right.B   : 90
+right.C   : 95
+right.D   : 70
+----
+96
+----
+left.A    : 46
+left.B    : 56
+left.C    : 96
+----
+----
+right.B   : 91
+right.C   : 96
+right.D   : 71
+----
+----
+left.A    : 46
+left.B    : 56
+left.C    : 96
+----
+----
+right.B   : 91
+right.C   : 96
+right.D   : 71
+----
+97
+----
+left.A    : 47
+left.B    : 57
+left.C    : 97
+----
+----
+right.B   : 92
+right.C   : 97
+right.D   : 72
+----
+----
+left.A    : 47
+left.B    : 57
+left.C    : 97
+----
+----
+right.B   : 92
+right.C   : 97
+right.D   : 72
+----
+98
+----
+left.A    : 48
+left.B    : 58
+left.C    : 98
+----
+----
+right.B   : 93
+right.C   : 98
+right.D   : 73
+----
+----
+left.A    : 48
+left.B    : 58
+left.C    : 98
+----
+----
+right.B   : 93
+right.C   : 98
+right.D   : 73
+----
+99
+----
+left.A    : 49
+left.B    : 59
+left.C    : 99
+----
+----
+right.B   : 94
+right.C   : 99
+right.D   : 74
+----
+----
+left.A    : 49
+left.B    : 59
+left.C    : 99
+----
+----
+right.B   : 94
+right.C   : 99
+right.D   : 74
+----
+100
+----
+left.A    : 50
+left.B    : 60
+left.C    : 100
+----
+----
+right.B   : 95
+right.C   : 100
+right.D   : 75
+----
+----
+left.A    : 50
+left.B    : 60
+left.C    : 100
+----
+----
+right.B   : 95
+right.C   : 100
+right.D   : 75
+----
+101
+----
+left.A    : 51
+left.B    : 61
+left.C    : 101
+----
+----
+right.B   : 96
+right.C   : 101
+right.D   : 76
+----
+----
+left.A    : 51
+left.B    : 61
+left.C    : 101
+----
+----
+right.B   : 96
+right.C   : 101
+right.D   : 76
+----
+102
+----
+left.A    : 52
+left.B    : 62
+left.C    : 102
+----
+----
+right.B   : 97
+right.C   : 102
+right.D   : 77
+----
+----
+left.A    : 52
+left.B    : 62
+left.C    : 102
+----
+----
+right.B   : 97
+right.C   : 102
+right.D   : 77
+----
+103
+----
+left.A    : 53
+left.B    : 63
+left.C    : 103
+----
+----
+right.B   : 98
+right.C   : 103
+right.D   : 78
+----
+----
+left.A    : 53
+left.B    : 63
+left.C    : 103
+----
+----
+right.B   : 98
+right.C   : 103
+right.D   : 78
+----
+104
+----
+left.A    : 54
+left.B    : 64
+left.C    : 104
+----
+----
+right.B   : 99
+right.C   : 104
+right.D   : 79
+----
+----
+left.A    : 54
+left.B    : 64
+left.C    : 104
+----
+----
+right.B   : 99
+right.C   : 104
+right.D   : 79
+----
+105
+----
+left.A    : 55
+left.B    : 65
+left.C    : 105
+----
+----
+right.B   : 100
+right.C   : 105
+right.D   : 80
+----
+----
+left.A    : 55
+left.B    : 65
+left.C    : 105
+----
+----
+right.B   : 100
+right.C   : 105
+right.D   : 80
+----
+106
+----
+left.A    : 56
+left.B    : 66
+left.C    : 106
+----
+----
+right.B   : 101
+right.C   : 106
+right.D   : 81
+----
+----
+left.A    : 56
+left.B    : 66
+left.C    : 106
+----
+----
+right.B   : 101
+right.C   : 106
+right.D   : 81
+----
+107
+----
+left.A    : 57
+left.B    : 67
+left.C    : 107
+----
+----
+right.B   : 102
+right.C   : 107
+right.D   : 82
+----
+----
+left.A    : 57
+left.B    : 67
+left.C    : 107
+----
+----
+right.B   : 102
+right.C   : 107
+right.D   : 82
+----
+108
+----
+left.A    : 58
+left.B    : 68
+left.C    : 108
+----
+----
+right.B   : 103
+right.C   : 108
+right.D   : 83
+----
+----
+left.A    : 58
+left.B    : 68
+left.C    : 108
+----
+----
+right.B   : 103
+right.C   : 108
+right.D   : 83
+----
+109
+----
+left.A    : 59
+left.B    : 69
+left.C    : 109
+----
+----
+right.B   : 104
+right.C   : 109
+right.D   : 84
+----
+----
+left.A    : 59
+left.B    : 69
+left.C    : 109
+----
+----
+right.B   : 104
+right.C   : 109
+right.D   : 84
+----
+110
+----
+left.A    : 60
+left.B    : 70
+left.C    : 110
+----
+----
+right.B   : 105
+right.C   : 110
+right.D   : 85
+----
+----
+left.A    : 60
+left.B    : 70
+left.C    : 110
+----
+----
+right.B   : 105
+right.C   : 110
+right.D   : 85
+----
+111
+----
+left.A    : 61
+left.B    : 71
+left.C    : 111
+----
+----
+right.B   : 106
+right.C   : 111
+right.D   : 86
+----
+----
+left.A    : 61
+left.B    : 71
+left.C    : 111
+----
+----
+right.B   : 106
+right.C   : 111
+right.D   : 86
+----
+112
+----
+left.A    : 62
+left.B    : 72
+left.C    : 112
+----
+----
+right.B   : 107
+right.C   : 112
+right.D   : 87
+----
+----
+left.A    : 62
+left.B    : 72
+left.C    : 112
+----
+----
+right.B   : 107
+right.C   : 112
+right.D   : 87
+----
+113
+----
+left.A    : 63
+left.B    : 73
+left.C    : 113
+----
+----
+right.B   : 108
+right.C   : 113
+right.D   : 88
+----
+----
+left.A    : 63
+left.B    : 73
+left.C    : 113
+----
+----
+right.B   : 108
+right.C   : 113
+right.D   : 88
+----
+114
+----
+left.A    : 64
+left.B    : 74
+left.C    : 114
+----
+----
+right.B   : 109
+right.C   : 114
+right.D   : 89
+----
+----
+left.A    : 64
+left.B    : 74
+left.C    : 114
+----
+----
+right.B   : 109
+right.C   : 114
+right.D   : 89
+----
+115
+----
+left.A    : 65
+left.B    : 75
+left.C    : 115
+----
+----
+right.B   : 110
+right.C   : 115
+right.D   : 90
+----
+----
+left.A    : 65
+left.B    : 75
+left.C    : 115
+----
+----
+right.B   : 110
+right.C   : 115
+right.D   : 90
+----
+116
+----
+left.A    : 66
+left.B    : 76
+left.C    : 116
+----
+----
+right.B   : 111
+right.C   : 116
+right.D   : 91
+----
+----
+left.A    : 66
+left.B    : 76
+left.C    : 116
+----
+----
+right.B   : 111
+right.C   : 116
+right.D   : 91
+----
+117
+----
+left.A    : 67
+left.B    : 77
+left.C    : 117
+----
+----
+right.B   : 112
+right.C   : 117
+right.D   : 92
+----
+----
+left.A    : 67
+left.B    : 77
+left.C    : 117
+----
+----
+right.B   : 112
+right.C   : 117
+right.D   : 92
+----
+118
+----
+left.A    : 68
+left.B    : 78
+left.C    : 118
+----
+----
+right.B   : 113
+right.C   : 118
+right.D   : 93
+----
+----
+left.A    : 68
+left.B    : 78
+left.C    : 118
+----
+----
+right.B   : 113
+right.C   : 118
+right.D   : 93
+----
+119
+----
+left.A    : 69
+left.B    : 79
+left.C    : 119
+----
+----
+right.B   : 114
+right.C   : 119
+right.D   : 94
+----
+----
+left.A    : 69
+left.B    : 79
+left.C    : 119
+----
+----
+right.B   : 114
+right.C   : 119
+right.D   : 94
+----
+120
+----
+left.A    : 70
+left.B    : 80
+left.C    : 120
+----
+----
+right.B   : 115
+right.C   : 120
+right.D   : 95
+----
+----
+left.A    : 70
+left.B    : 80
+left.C    : 120
+----
+----
+right.B   : 115
+right.C   : 120
+right.D   : 95
+----
+121
+----
+left.A    : 71
+left.B    : 81
+left.C    : 121
+----
+----
+right.B   : 116
+right.C   : 121
+right.D   : 96
+----
+----
+left.A    : 71
+left.B    : 81
+left.C    : 121
+----
+----
+right.B   : 116
+right.C   : 121
+right.D   : 96
+----
+122
+----
+left.A    : 72
+left.B    : 82
+left.C    : 122
+----
+----
+right.B   : 117
+right.C   : 122
+right.D   : 97
+----
+----
+left.A    : 72
+left.B    : 82
+left.C    : 122
+----
+----
+right.B   : 117
+right.C   : 122
+right.D   : 97
+----
+123
+----
+left.A    : 73
+left.B    : 83
+left.C    : 123
+----
+----
+right.B   : 118
+right.C   : 123
+right.D   : 98
+----
+----
+left.A    : 73
+left.B    : 83
+left.C    : 123
+----
+----
+right.B   : 118
+right.C   : 123
+right.D   : 98
+----
+124
+----
+left.A    : 74
+left.B    : 84
+left.C    : 124
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+----
+left.A    : 74
+left.B    : 84
+left.C    : 124
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+125
+----
+left.A    : 75
+left.B    : 85
+left.C    : 125
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+126
+----
+left.A    : 76
+left.B    : 86
+left.C    : 126
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+127
+----
+left.A    : 77
+left.B    : 87
+left.C    : 127
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+128
+----
+left.A    : 78
+left.B    : 88
+left.C    : 128
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+129
+----
+left.A    : 79
+left.B    : 89
+left.C    : 129
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+130
+----
+left.A    : 80
+left.B    : 90
+left.C    : 130
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+131
+----
+left.A    : 81
+left.B    : 91
+left.C    : 131
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+132
+----
+left.A    : 82
+left.B    : 92
+left.C    : 132
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+133
+----
+left.A    : 83
+left.B    : 93
+left.C    : 133
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+134
+----
+left.A    : 84
+left.B    : 94
+left.C    : 134
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+135
+----
+left.A    : 85
+left.B    : 95
+left.C    : 135
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+136
+----
+left.A    : 86
+left.B    : 96
+left.C    : 136
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+137
+----
+left.A    : 87
+left.B    : 97
+left.C    : 137
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+138
+----
+left.A    : 88
+left.B    : 98
+left.C    : 138
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+139
+----
+left.A    : 89
+left.B    : 99
+left.C    : 139
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+140
+----
+left.A    : 90
+left.B    : 100
+left.C    : 140
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+141
+----
+left.A    : 91
+left.B    : 101
+left.C    : 141
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+142
+----
+left.A    : 92
+left.B    : 102
+left.C    : 142
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+143
+----
+left.A    : 93
+left.B    : 103
+left.C    : 143
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+144
+----
+left.A    : 94
+left.B    : 104
+left.C    : 144
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+145
+----
+left.A    : 95
+left.B    : 105
+left.C    : 145
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+146
+----
+left.A    : 96
+left.B    : 106
+left.C    : 146
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+147
+----
+left.A    : 97
+left.B    : 107
+left.C    : 147
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+148
+----
+left.A    : 98
+left.B    : 108
+left.C    : 148
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----
+149
+----
+left.A    : 99
+left.B    : 109
+left.C    : 149
+----
+----
+right.B   : 119
+right.C   : 124
+right.D   : 99
+----

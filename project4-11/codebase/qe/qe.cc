@@ -48,25 +48,19 @@ void Project::getAttributes(vector<Attribute> &attrs) const {
 }
 
 INLJoin::INLJoin(Iterator *leftIn, IndexScan *rightIn, const Condition &condition) {
-    this->outer = leftIn;
-    this->inner = rightIn;
+    outer = leftIn;
+    inner = rightIn;
     this->condition = condition;
-    this->outerData = malloc(PAGE_SIZE);
-    this->innerData = malloc(PAGE_SIZE);
-    this->outerValue = malloc(PAGE_SIZE);
-    this->needNewOuterValue = true;   
-    outer->getAttributes(this->outerAttrs);
-    inner->getAttributes(this->innerAttrs);
-    for (auto &attr : this->outerAttrs)
-        if (condition.lhsAttr == attr.name) {
-            this->type = attr.type;
-            return;
-        }
-    assert(false && "could not find attribute for comparison");            
+    outerData = malloc(PAGE_SIZE);
+    innerData = malloc(PAGE_SIZE);
+    outerValue = malloc(PAGE_SIZE); 
+    outer->getAttributes(outerAttrs);
+    inner->getAttributes(innerAttrs);
+    needNewOuterValue = true;  
+    inFirstNEscan = false;           
 }
 
-RC INLJoin::getNextTuple(void *data){      
-    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance();      
+RC INLJoin::getNextTuple(void *data){    
     while (true) {
         if (needNewOuterValue) {
             if (outer->getNextTuple(outerData) == QE_EOF)
@@ -74,27 +68,38 @@ RC INLJoin::getNextTuple(void *data){
             else 
                 if (getValue(condition.lhsAttr, outerAttrs, outerData, outerValue) == IS_NULL) 
                     continue;
-                else
+                else {
+                    initNextInnerIterator();
                     needNewOuterValue = false;
-            // rbfm->printRecord(outerAttrs, outerData);
-        }
+                }
+        }              
         if (inner->getNextTuple(innerData) == QE_EOF) {
-            inner->setIterator();
-            needNewOuterValue = true;
+            if (condition.op == NE_OP and inFirstNEscan) {
+                inFirstNEscan = false;
+                inner->setIterator(outerValue, NULL, false, true); 
+            } else {
+                needNewOuterValue = true;
+            }
             continue;
-        }
-        // rbfm->printRecord(innerAttrs, innerData);
-        // assuming we don't want the row if attr is null
-        if (getValue(condition.rhsAttr, innerAttrs, innerData, data) == IS_NULL)
-            continue;
-        if (compare(condition.op, type, outerValue, data))
-            break;
-    }
+        } 
+        break;
+    }    
+    // found a match
     concatData(outerAttrs, outerData, innerAttrs, innerData, data);
-    vector<Attribute> temp;
-    this->getAttributes(temp);
-    // rbfm->printRecord(temp, data);
     return SUCCESS;
+}
+
+void INLJoin::initNextInnerIterator(void) {    
+    switch (condition.op) {
+        case EQ_OP: inner->setIterator(outerValue, outerValue, true,  true ); break;
+        case LT_OP: inner->setIterator(NULL,       outerValue, true,  false); break; 
+        case GT_OP: inner->setIterator(outerValue, NULL,       false, true ); break;
+        case LE_OP: inner->setIterator(NULL      , outerValue, true,  true ); break;
+        case GE_OP: inner->setIterator(outerValue, NULL,       true,  true ); break; 
+        case NE_OP: inner->setIterator(NULL,       outerValue, true,  false); inFirstNEscan = true; break; 
+        case NO_OP: inner->setIterator(NULL,       NULL,       true,  true ); break; 
+        default: assert(false && "not a valid compop in comparision");
+    }  
 }
 
  void INLJoin::getAttributes(vector<Attribute> &attrs) const {
