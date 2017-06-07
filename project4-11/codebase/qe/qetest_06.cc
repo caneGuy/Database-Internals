@@ -20,6 +20,8 @@ RC testCase_6() {
 	vector<string> attrNames;
 	attrNames.push_back("right.C");
 	attrNames.push_back("right.D");
+	attrNames.push_back("right.B");
+	attrNames.push_back("right.C");
 
 	int expectedResultCnt = 100;
 	int actualResultCnt = 0;
@@ -29,51 +31,71 @@ RC testCase_6() {
 	// Create Projector
 	Project *project = new Project(ts, attrNames);
 
+	float compVal = 90;
+
+	// Set up condition
+	Condition cond;
+	cond.lhsAttr = "right.C";
+	cond.op = GT_OP;
+	cond.bRhsIsAttr = false;
+	Value value; 
+	value.type = TypeReal;
+	value.data = malloc(bufSize);
+	*(float *) value.data = compVal;
+	cond.rhsValue = value;
+
+	// Create Filter
+	Filter *filter = new Filter(project, cond);
+
 	// Go over the data through iterator
 	void *data = malloc(bufSize);
 	bool nullBit = false;
+
+	vector<Attribute> vec;
+	filter->getAttributes(vec);
 	
-	while (project->getNextTuple(data) != QE_EOF) {
-		int offset = 0;
+	while (filter->getNextTuple(data) != QE_EOF) {
+		rm->printTuple(vec, data);
+		// int offset = 0;
 
-		// Is an attribute C NULL?
-		nullBit = *(unsigned char *)((char *)data) & (1 << 7);
-		if (nullBit) {
-			cout << endl << "***** A returned value is not correct. *****" << endl;
-			goto clean_up;
-		}
-		valueC = *(float *)((char *)data+1+offset);
+		// // Is an attribute C NULL?
+		// nullBit = *(unsigned char *)((char *)data) & (1 << 7);
+		// if (nullBit) {
+		// 	cout << endl << "***** A returned value is not correct. *****" << endl;
+		// 	goto clean_up;
+		// }
+		// valueC = *(float *)((char *)data+1+offset);
 		
-		// Print right.C
-		cout << "right.C " << valueC;
-		offset += sizeof(float);
+		// // Print right.C
+		// cout << "right.C " << valueC;
+		// offset += sizeof(float);
 
 
-		// Is an attribute D NULL?
-		nullBit = *(unsigned char *)((char *)data) & (1 << 6);
-		if (nullBit) {
-			cout << endl << "***** A returned value is not correct. *****" << endl;
-			goto clean_up;
-		}
+		// // Is an attribute D NULL?
+		// nullBit = *(unsigned char *)((char *)data) & (1 << 6);
+		// if (nullBit) {
+		// 	cout << endl << "***** A returned value is not correct. *****" << endl;
+		// 	goto clean_up;
+		// }
 
-		// Print right.D
-		valueD = *(int *)((char *)data+1+offset);
-		cout << "  right.D " << valueD << endl;
-		offset += sizeof(int);
-		if (valueD < 0 || valueD > 99) {
-			cout << endl << "***** A returned value is not correct. *****" << endl;
-			rc = fail;
-			goto clean_up;
-		}
+		// // Print right.D
+		// valueD = *(int *)((char *)data+1+offset);
+		// cout << "  right.D " << valueD << endl;
+		// offset += sizeof(int);
+		// if (valueD < 0 || valueD > 99) {
+		// 	cout << endl << "***** A returned value is not correct. *****" << endl;
+		// 	rc = fail;
+		// 	goto clean_up;
+		// }
 
-		memset(data, 0, bufSize);
-		actualResultCnt++;
+		// memset(data, 0, bufSize);
+		// actualResultCnt++;
 	}
 
-	if (expectedResultCnt != actualResultCnt) {
-		cout << "***** The number of returned tuple is not correct. *****" << endl;
-		rc = fail;
-	}
+	// if (expectedResultCnt != actualResultCnt) {
+	// 	cout << "***** The number of returned tuple is not correct. *****" << endl;
+	// 	rc = fail;
+	// }
 
 clean_up:
 	delete project;

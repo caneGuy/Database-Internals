@@ -16,14 +16,16 @@ int testCase_1() {
 	cerr << endl << "***** In QE Test Case 1 *****" << endl;
 
 	// Create an index before inserting tuples.
-	rc = createIndexforLeftB();
-	if (rc != success) {
-		cerr << "***** createIndexforLeftB() failed.  *****" << endl;
-		return rc;
-	}
+	// rc = createIndexforLeftB();
+	// if (rc != success) {
+	// 	cerr << "***** createIndexforLeftB() failed.  *****" << endl;
+	// 	return rc;
+	// }
 
 	// Insert tuples.
-	rc = populateLeftTable();
+	for (int i = 0; i < 50; ++i) {
+		rc = populateLeftTable();
+	}
 	if (rc != success) {
 		cerr << "***** populateLeftTable() failed.  *****" << endl;
 		return rc;
@@ -33,6 +35,12 @@ int testCase_1() {
 	rc = createIndexforLeftC();
 	if (rc != success) {
 		cerr << "***** createIndexforLeftC() failed.  *****" << endl;
+		return rc;
+	}
+
+	rc = createIndexforLeftB();
+	if (rc != success) {
+		cerr << "***** createIndexforLeftB() failed.  *****" << endl;
 		return rc;
 	}
 	return rc;

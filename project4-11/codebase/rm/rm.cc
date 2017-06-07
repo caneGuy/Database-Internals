@@ -23,7 +23,6 @@ RelationManager::RelationManager()
 
 RelationManager::~RelationManager()
 {
-    cout << "in destrucotr" << endl;
 }
 
 RC RelationManager::createCatalog()
@@ -1049,7 +1048,6 @@ RC RM_ScanIterator::close()
 // 4) insertIndex() and IX::createIndex() loop to make b-tree index file
 RC RelationManager::createIndex(const string &tableName, const string &attributeName)
 {
-    
     bool isSystem;
     RC rc = isSystemTable(isSystem, tableName);
     if (rc)
@@ -1220,18 +1218,15 @@ RC RelationManager::destroyIndex(const string &tableName, const string &attribut
 	return SUCCESS;
 }
 
-RC RelationManager::getValue(const string name, const vector<Attribute> &attrs, const void* data, void* value) 
-{
+RC RelationManager::getValue(const string name, const vector<Attribute> &attrs, const void* data, void* value) {
     int offset = ceil(attrs.size() / 8.0);
     for (size_t i = 0; i < attrs.size(); ++i) {
         char target = *((char*)data + i/8);
         if (target & (1<<(7-i%8))) {
-            if (name == attrs[i].name) {
+            if (name == attrs[i].name)
                 return -1;
-            }
-            else  {
+            else 
                 continue;
-            }
         }
         int size = sizeof(int);
         if (attrs[i].type == TypeVarChar) {
@@ -1240,11 +1235,12 @@ RC RelationManager::getValue(const string name, const vector<Attribute> &attrs, 
             memcpy((char*)value + sizeof(int), (char*)data + offset + sizeof(int), size);
             size += sizeof(int);
         } else 
-            memcpy(value, (char*)data + offset, sizeof(int));                  
+            memcpy(value, (char*)data + offset, sizeof(int));                 
         if (name == attrs[i].name)
-            return size;       
-        offset += size;
+            return size;     
+        offset += size;   
     }
+    // assert(false && "getValue called wiht name that is not in list");
     return 0;
 }
 
@@ -1303,6 +1299,7 @@ RC RelationManager::updateIndexes(const string& tableName, const vector<Attribut
 
     for(auto& index:  indexes) {
         rc = getValue(get<TupleColumn>(index), recordDescriptor, data, value); 
+        // cout << "Value col: " << get<TupleColumn>(index) << " getVal: " << rc << endl; 
         if(rc <= 0) {
             continue;
         }
