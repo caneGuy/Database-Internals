@@ -62,11 +62,9 @@ RC testCase_3() {
 		// Is an attribute B NULL?
 		nullBit = *(unsigned char *)((char *)data) & (1 << 6);
 		if (nullBit) {
-			cerr << endl << "***** Left.B is NULL *****" << endl;
-			// rc = fail;
-			// goto clean_up;
-		} else {
-			// cerr << endl << "***** LEFT.B is NOT NULL *****" << endl;
+			cerr << endl << "***** A returned value is not correct. *****" << endl;
+			rc = fail;
+			goto clean_up;
 		}
 
 		// Print left.B
