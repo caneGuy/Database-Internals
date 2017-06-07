@@ -1,11 +1,7 @@
 1. Basic information
-Team number (e.g., 01) : 11
-#1 Student ID : 1375886
-#1 Student Name : Travis Takai
-#2 Student ID : 1426712
-#2 Student Name : Brad Bernard
-#3 Student ID : 1442286
-#3 Student Name : Johannes Pitz
+Team number (e.g., 01) : 
+#1 Student Name :  
+#2 Student Name : 
 
 
 2. Catalog information about Index
@@ -15,49 +11,15 @@ Team number (e.g., 01) : 11
 3. Index Nested-Loop Join
 - Describe how your Index Nested-Loop Join works.
 
-We get one row from the outer iterator, and then set up the index scan
-so that it starts according to the conditon that was passed into the join.
-Then we just iterate over the inner iterator, and concatenate the two rows.
-A special case the NE_OP. We set up the inner iterator twice, once for the 
-part of the file (strictly less than the value of the outer row), and once 
-for the second part of the file. 
-(strictly greater than the value of the outer row)
-
-Here our switch case for the setIterator.
-case EQ_OP: inner->setIterator(outerValue, outerValue, true,  true ); break;
-case LT_OP: inner->setIterator(NULL,       outerValue, true,  false); break; 
-case GT_OP: inner->setIterator(outerValue, NULL,       false, true ); break;
-case LE_OP: inner->setIterator(NULL,	   outerValue, true,  true ); break;
-case GE_OP: inner->setIterator(outerValue, NULL,       true,  true ); break; 
-case NE_OP: inner->setIterator(NULL,       outerValue, true,  false); inFirstNEscan = true; break; 
-case NO_OP: inner->setIterator(NULL,       NULL,       true,  true ); break; 
-
 
 4. Implementation Detail
 - Have you added your own source file (.cc or .h)?
-
-We used the provided qe.cc and qe.h files. We implemented the filter directly
-in the header, because the functions are really short, and the Projection and
-INL in the .cc file.
-We put some helper function in Iterator class so that all the subclasses can use those 
-(implemented them in the header too).
 
 - Have you implemented any optional features? Then, describe them here.
 
 - Other implementation details:
 
-The Project Iterator fills its vector of attributes by using the input Iterator's 
-getAttributes. When the Project's getAttributes is called it fills the vector in 
-the case that the attributes name is in the attrNames vector. The Project::getNextTuple 
-operation makes use of our custom function getValue (described below) to gather 
-data that matches the attribute names it is given initially through the vector attrNames. 
-It gathers the data to select from by using the getNextTuple function on the Iterator
-it gets on construction. 
 
 5. Other (optional)
 - Freely use this section to tell us about things that are related to Project 4, but not related to the other sections (optional)
 
-We wrote a custom getValue function that retrieves a data based on the name of
-the attribute. It iterates through a buffer of data that is passed in to find if
-an attribute's corresponding value is null based on the attribute vector. It then
-copies out the data into a second buffer that the Iterator that calls it then collects.
