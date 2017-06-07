@@ -407,12 +407,20 @@ int populateLeftTable() {
     int nullAttributesIndicatorActualSize = getActualByteForNullsIndicator(attrs.size());
     unsigned char *nullsIndicator = (unsigned char *) malloc(nullAttributesIndicatorActualSize);
 	memset(nullsIndicator, 0, nullAttributesIndicatorActualSize);
+
+    int nullPos = 2; // b
 	
 	for (int i = 0; i < tupleCount; ++i) {
 		memset(buf, 0, bufSize);
 
 		// Prepare the tuple data for insertion
 		// a in [0,99], b in [10, 109], c in [50, 149.0]
+
+        if(i % 2 == 0)
+            *nullsIndicator |= 1 << (8 - nullPos);
+        else
+            *nullsIndicator &= 1 << ~(8 - nullPos);
+
 		int a = i;
 		int b = i + 10;
 		float c = (float) (i + 50);
@@ -484,8 +492,15 @@ int populateRightTable() {
     unsigned char *nullsIndicator = (unsigned char *) malloc(nullAttributesIndicatorActualSize);
 	memset(nullsIndicator, 0, nullAttributesIndicatorActualSize);
 
+    int nullPos = 2; // b
+
 	for (int i = 0; i < tupleCount; ++i) {
 		memset(buf, 0, bufSize);
+
+        if(i % 5 == 0)
+            *nullsIndicator |= 1 << (8 - nullPos);
+        else
+            *nullsIndicator &= 1 << ~(8 - nullPos);
 
 		// Prepare the tuple data for insertion
 		// b in [20, 119], c in [25, 124.0], d in [0, 99]
