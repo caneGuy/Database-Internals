@@ -23,6 +23,7 @@ RelationManager::RelationManager()
 
 RelationManager::~RelationManager()
 {
+    cout << "in destrucotr" << endl;
 }
 
 RC RelationManager::createCatalog()
@@ -724,6 +725,8 @@ RC RelationManager::insertIndex(int32_t tid, const string &attributeName)
     void *indexData = malloc (INDEXES_RECORD_DATA_SIZE);
     prepareIndexesRecordData(tid, attributeName, indexData);
     rc = rbfm->insertRecord(fileHandle, indexDescriptor, indexData, rid);
+    if (rc) 
+        return rc;
 
     rbfm->closeFile(fileHandle);
     free (indexData);
@@ -1046,6 +1049,7 @@ RC RM_ScanIterator::close()
 // 4) insertIndex() and IX::createIndex() loop to make b-tree index file
 RC RelationManager::createIndex(const string &tableName, const string &attributeName)
 {
+    
     bool isSystem;
     RC rc = isSystemTable(isSystem, tableName);
     if (rc)
@@ -1118,6 +1122,7 @@ RC RelationManager::createIndex(const string &tableName, const string &attribute
 
     if (rc != RBFM_EOF)
         return rc;
+    
 
     rc = insertIndex(id, attributeName);
     if (rc)
@@ -1157,7 +1162,7 @@ RC RelationManager::createIndex(const string &tableName, const string &attribute
         if (rc)
             return -1;
     }
-
+    
     if (rc != RBFM_EOF)
         return rc;
 
@@ -1256,10 +1261,15 @@ RC RelationManager::updateIndexes(const string& tableName, const vector<Attribut
     vector<string> projection;
     projection.push_back(INDEXES_COL_COLUMN_NAME);
 
-    int32_t id = INDEXES_TABLE_ID;
+    int32_t id;
+    rc = getTableID(tableName, id);
+    if (rc)
+        return rc;
+    
     void *value = &id;
     rc = rbfm->scan(fileHandle, indexDescriptor, INDEXES_COL_TABLE_ID, EQ_OP, value, projection, rbfm_si);
 
+    
     RID recordRID;
     void *recordData = malloc(1 + INT_SIZE + INDEXES_COL_COLUMN_NAME_SIZE);
     vector<IndexTuple> indexes;
@@ -1284,9 +1294,10 @@ RC RelationManager::updateIndexes(const string& tableName, const vector<Attribut
 
     // assuming order is insert order
     for(unsigned i = 0; i < recordDescriptor.size(); ++i) {
-        if(i >= indexes.size()) break;
-        if(recordDescriptor[i].name == get<TupleColumn>(indexes[i])) {
-            indexes[i] = make_tuple(get<TupleColumn>(indexes[i]), i);
+        for(unsigned j = 0; j < indexes.size(); ++j) {
+            if(recordDescriptor[i].name == get<TupleColumn>(indexes[j])) {
+                indexes[j] = make_tuple(get<TupleColumn>(indexes[j]), i);
+            }
         }
     }
 
@@ -1325,8 +1336,6 @@ RC RelationManager::indexScan(const string &tableName,
                       bool highKeyInclusive,
                       RM_IndexScanIterator &rm_IndexScanIterator)
 {
-    rm_IndexScanIterator.ix_iter = *(new IX_ScanIterator());
-
     vector<Attribute> recordDescriptor;
     RC rc = getAttributes(tableName, recordDescriptor);
     if (rc)
@@ -1341,6 +1350,7 @@ RC RelationManager::indexScan(const string &tableName,
             break;
         }
     }
+    
 
     if(!colExists)
         return -1;
@@ -1351,7 +1361,7 @@ RC RelationManager::indexScan(const string &tableName,
     if (rc)
         return rc;
 
-    rc = rm_IndexScanIterator.ix_iter.initialize(*rm_IndexScanIterator.ix_iter.fileHandle, recordDescriptor[colPos], lowKey, highKey, lowKeyInclusive, highKeyInclusive);
+    rc = im->scan(*rm_IndexScanIterator.ix_iter.fileHandle, recordDescriptor[colPos], lowKey, highKey, lowKeyInclusive, highKeyInclusive, rm_IndexScanIterator.ix_iter);
     if(rc)
         return rc;
 
@@ -1369,10 +1379,13 @@ RC RM_IndexScanIterator::close() {
     RC rc = ix_iter.close();
     if (rc)
         return rc;
+        
 
     rc = im->closeFile(*ix_iter.fileHandle);
     if (rc)
         return rc;
+    
+    delete ix_iter.fileHandle;
 
     return SUCCESS;
 }

@@ -796,7 +796,7 @@ RC IX_ScanIterator::initialize(IXFileHandle &fh, Attribute attribute, const void
     highKey = high;
     lowKeyInclusive = lowInc;
     highKeyInclusive = highInc;
-
+    
     // Initialize our storage
     page = malloc(PAGE_SIZE);
     if (page == NULL)
@@ -854,10 +854,12 @@ RC IX_ScanIterator::getNextEntry(RID &rid, void *key)
     // If highkey is null, always carry on
     // Otherwise, carry on only if highkey is greater than the current key
     int cmp = highKey == NULL ? 1 : im->compareLeafSlot(attr, highKey, page, slotNum);
-    if (cmp == 0 && !highKeyInclusive)
+    if (cmp == 0 && !highKeyInclusive) {
         return IX_EOF;
-    if (cmp < 0)
+    } 
+    if (cmp < 0) {
         return IX_EOF;
+    }
 
     // Grab the data entry, grab its rid
     DataEntry entry = im->getDataEntry(slotNum, page);

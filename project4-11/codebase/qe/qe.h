@@ -345,9 +345,10 @@ class Filter : public Iterator {
             while (true) {
                 if (iterator->getNextTuple(data) == QE_EOF)
                     return QE_EOF;
-                // assuming we want row if attr is null
-                if (getValue(condition.lhsAttr, attrs, data, this->buffer) == IS_NULL)
+                if (condition.op == NO_OP)
                     break;
+                if (getValue(condition.lhsAttr, attrs, data, this->buffer) == IS_NULL)
+                    continue;
                 if (compare(condition.op, condition.rhsValue.type, this->buffer, condition.rhsValue.data))
                     break;
             }

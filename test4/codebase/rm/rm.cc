@@ -1350,8 +1350,8 @@ RC RelationManager::indexScan(const string &tableName,
     rc = im->openFile(indexFileName(tableName, attributeName), *rm_IndexScanIterator.ix_iter.fileHandle);
     if (rc)
         return rc;
-
-    rc = rm_IndexScanIterator.ix_iter.initialize(*rm_IndexScanIterator.ix_iter.fileHandle, recordDescriptor[colPos], lowKey, highKey, lowKeyInclusive, highKeyInclusive);
+                
+    rc = im->scan(*rm_IndexScanIterator.ix_iter.fileHandle, recordDescriptor[colPos], lowKey, highKey, lowKeyInclusive, highKeyInclusive, rm_IndexScanIterator.ix_iter);
     if(rc)
         return rc;
 
