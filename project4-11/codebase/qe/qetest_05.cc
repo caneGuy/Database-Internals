@@ -25,7 +25,7 @@ RC testCase_5() {
 	cond.op = GE_OP;
 	cond.bRhsIsAttr = false;
 	Value value;
-	value.type = TypeReal; 
+	value.type = TypeReal;
 	value.data = malloc(bufSize);
 	*(float *) value.data = compVal;
 	cond.rhsValue = value;

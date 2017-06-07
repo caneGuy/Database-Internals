@@ -1,25 +1,137 @@
 1. Basic information
-Team number (e.g., 01) : 
-#1 Student Name :  
-#2 Student Name : 
+Team number (e.g., 01) : 11
+#1 Student ID : 1375886
+#1 Student Name : Travis Takai
+#2 Student ID : 1426712
+#2 Student Name : Brad Bernard
+#3 Student ID : 1442286
+#3 Student Name : Johannes Pitz
 
 
 2. Catalog information about Index
 - Show your catalog information about an index (table, column, etc.). 
 
+The schema for the catalog indexes table contains:
+table-id (int: 4) |  column-name (varchar: 50)
+
+I went with column-name varchar size of 50 because the tables table schema
+has column-name length of 50. 
+
+- Create catalog now sets up the indexes table with the above schema.
+- Delete catalog now deletes the indexes table.
+- Delete table now deletes the indexes from that table.
+
+- Index tuple now after inserting the record calls a function 
+updateIndexes with the flag INDEX_INSERT.
+- Delete tuple now after deleting the record calls a function 
+updateIndexes with the flag INDEX_DELETE.
+- Update tuple now after updating the record calls a function
+updateIndexes twice one with delete and one with insert.
+
+updateIndexes takes in a tableName and scans the table for indexes and collects
+them. After collecting, it checks to see if the record passed in has values
+for the index columns. We use a function getValue() which is described below, but
+basically it selects the size of an attribute if it exists else returns -1.
+I call getValue for each of the indexes columns to see if it exists in the row data
+and if so opens the index file for that (table, column) combination and does an action 
+on the underlying index file through ix manager depending on the parameter flag:
+
+    #define INDEX_INSERT 0
+    #define INDEX_DELETE 1
+    - INDEX_INSERT: insert the column value into the column's index file
+    - INDEX_DELETE: delete the column value from the column's index file
+
+When I collect the vector of indexes from the tableName I use a vector of a custom
+2-tuple of string of the column name and int of the index inside the record descriptor.
+To access the tuple elements I used a hash define so its easier to read.
+
+typedef tuple<string, int> IndexTuple;
+#define TupleColumn 0
+#define TupleIndex 1
+
+so I can then use get<TupleColumn>(my_tuple) to pull out the column string
+and also get<TupleIndex>(my_tuple) to pull out the index in the record descriptor.
+
+To create the columns setup, I followed the structure the rm.h/rm.cc already had
+so for each of the methods implemented I created a copy of it and changed it to fit
+the index structure:
+    RC insertIndex(int32_t tid, const string &attributeName);
+    void prepareIndexesRecordData(int32_t tid, const string &attributeName, void *data);
+    static vector<Attribute> createIndexDescriptor();
+    static string indexFileName(const string &tableName, const char *indexName);
+    static string indexFileName(const string &tableName, const string &indexName);
+    const vector<Attribute> indexDescriptor;
+    #define INDEX_FILE_EXTENSION ".i"
+
+And finally, I copied the hash defines for the indexes table so I could use them
+similarly in the record descriptor vectors:
+    #define INDEXES_RECORD_DATA_SIZE 1 + 2 * INT_SIZE + INDEXES_COL_COLUMN_NAME_SIZE
+    #define INDEXES_TABLE_NAME           "Indexes"
+    #define INDEXES_TABLE_ID             3
+    #define INDEXES_COL_TABLE_ID         "table-id"
+    #define INDEXES_COL_COLUMN_NAME      "column-name"
+    #define INDEXES_COL_COLUMN_NAME_SIZE 50
 
 3. Index Nested-Loop Join
 - Describe how your Index Nested-Loop Join works.
+
+We get one row from the outer iterator, and then set up the index scan
+so that it starts according to the conditon that was passed into the join.
+Then we just iterate over the inner iterator, and concatenate the two rows.
+A special case the NE_OP. We set up the inner iterator twice, once for the 
+part of the file (strictly less than the value of the outer row), and once 
+for the second part of the file. 
+(strictly greater than the value of the outer row)
+
+Here our switch case for the setIterator.
+case EQ_OP: inner->setIterator(outerValue, outerValue, true,  true ); break;
+case LT_OP: inner->setIterator(NULL,       outerValue, true,  false); break; 
+case GT_OP: inner->setIterator(outerValue, NULL,       false, true ); break;
+case LE_OP: inner->setIterator(NULL,       outerValue, true,  true ); break;
+case GE_OP: inner->setIterator(outerValue, NULL,       true,  true ); break; 
+case NE_OP: inner->setIterator(NULL,       outerValue, true,  false); inFirstNEscan = true; break; 
+case NO_OP: inner->setIterator(NULL,       NULL,       true,  true ); break; 
 
 
 4. Implementation Detail
 - Have you added your own source file (.cc or .h)?
 
-- Have you implemented any optional features? Then, describe them here.
+We used the provided qe.cc and qe.h files. We implemented the filter directly
+in the header, because the functions are really short, and the Projection and
+INL in the .cc file.
+We put some helper function in Iterator class so that all the subclasses can use those 
+(implemented them in the header too).
 
+- Have you implemented any optional features? Then, describe them here.
 - Other implementation details:
 
+The Project Iterator fills its vector of attributes by using the input Iterator's 
+getAttributes. When the Project's getAttributes is called it fills the vector in 
+the case that the attributes name is in the attrNames vector. The Project::getNextTuple 
+operation makes use of our custom function getValue (described below) to gather 
+data that matches the attribute names it is given initially through the vector attrNames. 
+It gathers the data to select from by using the getNextTuple function on the Iterator
+it gets on construction. 
+
+The Filter Iterator just uses the iterator that was passed in, and then returns only
+those rows that fullfil the condition. To check the condition, we use the getValue 
+function described below, and then compare this value and the one passed in 
+(inside the condition struct) using a function that switches on the Attribute type
+and then calls another (template) function which switches on the comparison operator,
+and then returns true or false.
 
 5. Other (optional)
 - Freely use this section to tell us about things that are related to Project 4, but not related to the other sections (optional)
 
+We wrote a custom getValue function that retrieves a data based on the name of
+the attribute. It iterates through a buffer of data that is passed in to find if
+an attribute's corresponding value is null based on the attribute vector. It then
+copies out the data into a second buffer that the Iterator that calls it then collects.
+
+********* 
+There are (fixed size) memory leaks in RM when creating record descriptors:
+createTableDescriptor, createColumnDescriptor, createIndexDescriptor 
+because the RM saves the descriptors which have attributes which have strings. The
+strings are leaked because the RM instance is never deleted. 
+There are also one byte leaks for the RBFM, RBF, and IX instances on the RM class. 
+*********

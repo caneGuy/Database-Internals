@@ -15,15 +15,15 @@ RC testCase_9() {
 	cerr << endl << "***** In QE Test Case 9 *****" << endl;
 
 	RC rc = success;
-  
+
 	// Prepare the iterator and condition
 	TableScan *leftIn = new TableScan(*rm, "left");
 	IndexScan *rightIn = new IndexScan(*rm, "right", "C");
 
-	Condition cond;  
+	Condition cond;
 	cond.lhsAttr = "left.C";
 	cond.op = EQ_OP;
-	cond.bRhsIsAttr = true; 
+	cond.bRhsIsAttr = true;
 	cond.rhsAttr = "right.C";
 
 	int expectedResultCnt = 75; // 50.0~124.0  left.C: [50.0,149.0], right.C: [25.0,124.0]
@@ -32,22 +32,6 @@ RC testCase_9() {
 
 	// Create INLJoin
 	INLJoin *inlJoin = new INLJoin(leftIn, rightIn, cond);
-    
-    // float outerValue = 124;
-    // float innerValue = 123;
-    // rightIn->setIterator(&innerValue, &outerValue, false,  true );
-    
-    
-    // RecordBasedFileManager *rbfm = RecordBasedFileManager::instance();  
-    // vector<Attribute> testAttr; 
-    // rightIn->getAttributes(testAttr);
-    
-    // void* testData = malloc(200);
-    // while (rightIn->getNextTuple(testData) != QE_EOF) {
-        // rbfm->printRecord(testAttr, testData);
-    // } 
-    // return 0;
-    
 
 	// Go over the data through iterator
 	void *data = malloc(bufSize);
@@ -65,7 +49,7 @@ RC testCase_9() {
 		// Print left.A
 		cerr << "left.A " << *(int *) ((char *) data + offset + 1);
 		offset += sizeof(int);
-  
+
 		// Is an attribute left.B NULL?
 		nullBit = *(unsigned char *)((char *)data) & (1 << 6);
 		if (nullBit) {
@@ -106,11 +90,11 @@ RC testCase_9() {
 		valueC = *(float *) ((char *) data + offset + 1);
 		cerr << "  right.C " << valueC;
 		offset += sizeof(float);
-		// if (valueC < 50.0 || valueC > 124.0) {
-			// cerr << endl << "***** A returned value is not correct. *****" << endl;
-			// rc = fail;
-			// goto clean_up;
-		// }
+		if (valueC < 50.0 || valueC > 124.0) {
+			cerr << endl << "***** A returned value is not correct. *****" << endl;
+			rc = fail;
+			goto clean_up;
+		}
 
 		// Is an attribute right.C NULL?
 		nullBit = *(unsigned char *)((char *)data) & (1 << 2);

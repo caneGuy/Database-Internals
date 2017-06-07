@@ -23,7 +23,7 @@ RC testCase_3() {
 	cond.lhsAttr = "left.B";
 	cond.op = LE_OP;
 	cond.bRhsIsAttr = false;
-	Value value; 
+	Value value;
 	value.type = TypeInt;
 	value.data = malloc(bufSize);
 	*(int *) value.data = compVal;

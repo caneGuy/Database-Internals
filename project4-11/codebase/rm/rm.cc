@@ -23,7 +23,6 @@ RelationManager::RelationManager()
 
 RelationManager::~RelationManager()
 {
-    cout << "in destrucotr" << endl;
 }
 
 RC RelationManager::createCatalog()
@@ -142,21 +141,51 @@ RC RelationManager::deleteTable(const string &tableName)
     if (rc)
         return rc;
 
-    // Open tables file
     FileHandle fileHandle;
+    rc = rbfm->openFile(getFileName(INDEXES_TABLE_NAME), fileHandle);
+    if (rc)
+        return rc;
+
+    RBFM_ScanIterator rbfm_si;
+    vector<string> projection;
+    projection.push_back(INDEXES_COL_COLUMN_NAME);
+
+    void *value = &id;
+    rc = rbfm->scan(fileHandle, indexDescriptor, INDEXES_COL_TABLE_ID, EQ_OP, value, projection, rbfm_si);
+
+    RID rid;
+    void *data = malloc(INDEXES_RECORD_DATA_SIZE);
+    while ((rc = rbfm_si.getNextRecord(rid, data)) == SUCCESS)
+    {
+        unsigned offset = 1;
+
+        int32_t colLen;
+        memcpy(&colLen, (char*) data + offset, VARCHAR_LENGTH_SIZE);
+        offset += VARCHAR_LENGTH_SIZE;
+
+        char col[colLen + 1];
+        col[colLen] = '\0';
+        memcpy(col, (char*) data + offset, colLen);
+
+        cout << "Deleting index: (" << tableName << ", " << col << ") " << endl;
+        cout << "destroy RC: " << destroyIndex(tableName, col) << endl;
+    }
+
+    // Close
+    rbfm_si.close();
+    rbfm->closeFile(fileHandle);
+    free(data);
+
+    // Open tables file
     rc = rbfm->openFile(getFileName(TABLES_TABLE_NAME), fileHandle);
     if (rc)
         return rc;
 
     // Find entry with same table ID
-    // Use empty projection because we only care about RID
-    RBFM_ScanIterator rbfm_si;
-    vector<string> projection; // Empty
-    void *value = &id;
+    projection.clear(); // Empty
+    value = &id;
 
     rc = rbfm->scan(fileHandle, tableDescriptor, TABLES_COL_TABLE_ID, EQ_OP, value, projection, rbfm_si);
-
-    RID rid;
     rc = rbfm_si.getNextRecord(rid, NULL);
     if (rc)
         return rc;
@@ -1200,20 +1229,38 @@ RC RelationManager::destroyIndex(const string &tableName, const string &attribut
     rc = rbfm->scan(fileHandle, indexDescriptor, INDEXES_COL_TABLE_ID, EQ_OP, value, projection, rbfm_si);
 
     RID rid;
-    while((rc = rbfm_si.getNextRecord(rid, NULL)) == SUCCESS)
+    void *data = malloc(INDEXES_RECORD_DATA_SIZE);
+    while((rc = rbfm_si.getNextRecord(rid, data)) == SUCCESS)
     {
+        unsigned offset = 1;
+
+        int32_t colLen;
+        memcpy(&colLen, (char*) data + offset, VARCHAR_LENGTH_SIZE);
+        offset += VARCHAR_LENGTH_SIZE;
+
+        char col[colLen + 1];
+        col[colLen] = '\0';
+        memcpy(col, (char*) data + offset, colLen);
+
+        cout << "Index: (" << tableName << "," << col << ")" << endl;
+
+        if(strcmp(col, attributeName.c_str()) != 0)
+            continue;
+
         rc = rbfm->deleteRecord(fileHandle, indexDescriptor, rid);
         if (rc)
             return rc;
+
+        break;
     }
-    if (rc != RBFM_EOF)
-        return rc;
 
     rbfm->closeFile(fileHandle);
     rbfm_si.close();
+    free(data);
 
     IndexManager *im = IndexManager::instance();
     rc = im->destroyFile(indexFileName(tableName, attributeName));
+    cout << "Destroy file: " << rc << endl;
     if (rc)
         return rc;
 

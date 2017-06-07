@@ -426,7 +426,6 @@ int populateLeftTable() {
 
 clean_up:
 	free(buf);
-	free(nullsIndicator);
 	return rc;
 }
 
@@ -464,7 +463,6 @@ int populateLargeLeftTable() {
 
 clean_up:
 	free(buf);
-	free(nullsIndicator);
 	return rc;
 }
 
@@ -502,7 +500,6 @@ int populateRightTable() {
 
 clean_up:
 	free(buf);
-	free(nullsIndicator);
 	return rc;
 }
 
@@ -540,7 +537,6 @@ int populateLargeRightTable() {
 
 clean_up:
 	free(buf);
-	free(nullsIndicator);
 	return rc;
 }
 
@@ -581,7 +577,6 @@ int populateLeftVarCharTable() {
 
 clean_up:
 	free(buf);
-	free(nullsIndicator);
 	return rc;
 }
 
@@ -622,7 +617,6 @@ int populateRightVarCharTable() {
 
 clean_up:
 	free(buf);
-	free(nullsIndicator);
 	return rc;
 }
 
@@ -660,7 +654,6 @@ int populateGroupTable() {
 
 clean_up:
 	free(buf);
-	free(nullsIndicator);
 	return rc;
 }
 
