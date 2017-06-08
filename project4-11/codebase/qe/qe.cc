@@ -66,7 +66,7 @@ RC INLJoin::getNextTuple(void *data){
             if (outer->getNextTuple(outerData) == QE_EOF)
                 return QE_EOF;
             else 
-                if (getValue(condition.lhsAttr, outerAttrs, outerData, outerValue) == IS_NULL) 
+                if (getValue(condition.lhsAttr, outerAttrs, outerData, outerValue) == IS_NULL and condition.op != NO_OP) 
                     continue;
                 else {
                     initNextInnerIterator();

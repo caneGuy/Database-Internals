@@ -80,8 +80,12 @@ so that it starts according to the conditon that was passed into the join.
 Then we just iterate over the inner iterator, and concatenate the two rows.
 A special case the NE_OP. We set up the inner iterator twice, once for the 
 part of the file (strictly less than the value of the outer row), and once 
-for the second part of the file. 
-(strictly greater than the value of the outer row)
+for the second part of the file (strictly greater than the value of the 
+outer row). 
+Note: the inner iterator will not find the rows where the key is null, which
+is good for all operators except for NO_OP. That means NO_OP won't return a
+full cartesian product (we still return the rows from the outer relation where
+the key is null). 
 
 Here our switch case for the setIterator.
 case EQ_OP: inner->setIterator(outerValue, outerValue, true,  true ); break;
